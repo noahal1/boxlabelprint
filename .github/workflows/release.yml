@@ -23,11 +23,12 @@ jobs:
           node-version: 22
 
       - name: 安装依赖
+        working-directory: .
         run: |
-          cd box-label-printer
           npm ci
 
       - name: 设置 Electron 镜像（中国加速）
+        shell: pwsh
         run: |
           echo "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/" >> $env:GITHUB_ENV
 
@@ -35,6 +36,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd box-label-printer
           npm run build:renderer
           npx electron-builder --win --x64 --publish always
