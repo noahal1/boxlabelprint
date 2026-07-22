@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Modal, Button, Space, message, Segmented, Tooltip } from 'antd';
-import { PrinterOutlined, CloseOutlined, AppstoreOutlined } from '@ant-design/icons';
+import { PrinterOutlined, CloseOutlined } from '@ant-design/icons';
 import QRCode from 'qrcode';
 import { getTemplateById, templates } from '../templates';
 import type { LabelData } from '../templates';
@@ -18,11 +18,11 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
   const [settings, setSettings] = useState({
     companyName: '',
     companyLogo: '',
-    templateId: 'standard',
+    templateId: 'factory',
     labelWidth: 100,
     labelHeight: 75,
   });
-  const [selectedTemplate, setSelectedTemplate] = useState('standard');
+  const [selectedTemplate, setSelectedTemplate] = useState('factory');
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
           window.electronAPI.getSetting('label_width'),
           window.electronAPI.getSetting('label_height'),
         ]);
-        const tplId = tmpl || 'standard';
+        const tplId = tmpl || 'factory';
         setSettings({
           templateId: tplId,
           companyName: name || '',
@@ -68,7 +68,8 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     const containerId = `qr-container-${data.box_number}`;
     const el = containerRef.current.querySelector(`#${containerId}`);
     if (el) {
-      (el as HTMLElement).innerHTML = `<img src="${qrDataUrl}" alt="QR" style="width:100%;height:100%;object-fit:contain;display:block;" />`;
+      (el as HTMLElement).innerHTML =
+        `<img src="${qrDataUrl}" alt="QR" style="width:100%;height:100%;object-fit:contain;display:block;" />`;
       (el as HTMLElement).style.border = 'none';
       (el as HTMLElement).style.display = 'block';
     }
@@ -104,21 +105,53 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
 
   return (
     <Modal
-      title={<Space><PrinterOutlined /><span>标签预览</span></Space>}
+      title={
+        <Space>
+          <PrinterOutlined style={{ color: '#0078d4' }} />
+          <span>标签预览</span>
+        </Space>
+      }
       open={visible}
       onCancel={onClose}
-      width={560}
+      width={580}
       footer={
         <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
-          <Button icon={<CloseOutlined />} onClick={onClose}>关闭</Button>
-          <Button type="primary" icon={<PrinterOutlined />} onClick={handlePrint} size="large" disabled={loadingSettings}>
+          <Button
+            icon={<CloseOutlined />}
+            onClick={onClose}
+            style={{ borderRadius: 6, height: 34 }}
+          >
+            关闭
+          </Button>
+          <Button
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={handlePrint}
+            size="large"
+            disabled={loadingSettings}
+            style={{ borderRadius: 8, height: 42, padding: '0 24px', fontWeight: 600 }}
+          >
             确认打印
           </Button>
         </Space>
       }
       centered
+      styles={{
+        body: {
+          padding: '24px 24px 8px',
+        },
+      }}
     >
-      <div style={{ marginBottom: 16, textAlign: 'center' }}>
+      {/* 模板选择器 */}
+      <div
+        style={{
+          marginBottom: 18,
+          textAlign: 'center',
+          padding: '8px 12px',
+          background: '#f3f2f1',
+          borderRadius: 8,
+        }}
+      >
         <Segmented
           value={selectedTemplate}
           onChange={(val) => setSelectedTemplate(val as string)}
@@ -127,7 +160,16 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
             label: (
               <Tooltip title={t.description}>
                 <Space size={4}>
-                  <span style={{ display: 'inline-block', width: 16, height: 12, background: t.thumbnail.color, border: '1px solid #d9d9d9', borderRadius: 2 }} />
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: 14,
+                      height: 11,
+                      background: t.thumbnail.color,
+                      border: '1px solid #d2d0ce',
+                      borderRadius: 2,
+                    }}
+                  />
                   <span>{t.name}</span>
                 </Space>
               </Tooltip>
@@ -136,8 +178,39 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
         />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center', padding: 20, background: '#f5f5f5', borderRadius: 8, minHeight: 200 }}>
-        <div ref={containerRef} style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}>
+      {/* 预览区域 — 亚克力卡片 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          padding: 24,
+          background: 'rgba(255,255,255,0.72)',
+          backdropFilter: 'blur(20px) saturate(1.2)',
+          WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
+          borderRadius: 10,
+          minHeight: 200,
+          border: '1px solid rgba(255,255,255,0.6)',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        {/* 高光线 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            background:
+              'linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div
+          ref={containerRef}
+          style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}
+        >
           {currentTemplate.render(data, {
             companyName: settings.companyName,
             companyLogo: settings.companyLogo,
@@ -165,7 +238,9 @@ function generateZPL(data: LabelData, templateId: string): string {
         `^FO20,60^FD${data.displayFields[1]?.label || ''}: ${secondVal}^FS`,
         `^FO160,40^BQN,2,6^FDQA,${qrContent}^FS`,
         `^FO20,130^BY2^BCN,30,Y,N^FD${data.box_number}^FS`,
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join('\n');
       break;
     default:
       body = [
@@ -175,7 +250,9 @@ function generateZPL(data: LabelData, templateId: string): string {
         `^FO20,80^FD${data.displayFields[1]?.label || ''}: ${secondVal}^FS`,
         `^FO280,15^BQN,2,6^FDQA,${qrContent}^FS`,
         `^FO20,200^BY2^BCN,40,Y,N^FD${data.box_number}^FS`,
-      ].filter(Boolean).join('\n');
+      ]
+        .filter(Boolean)
+        .join('\n');
       break;
   }
 

@@ -32,7 +32,7 @@ const defaultSettings: SettingsData = {
   label_height: 75,
   company_name: '我的公司',
   company_logo: '',
-  label_template: 'standard',
+  label_template: 'factory',
 };
 
 export default function Settings() {
@@ -93,7 +93,7 @@ export default function Settings() {
         label_height: String(values.label_height || 75),
         company_name: values.company_name || '',
         company_logo: logoPreview,
-        label_template: values.label_template || 'standard',
+        label_template: values.label_template || 'factory',
       };
       for (const [key, value] of Object.entries(saveData)) {
         await window.electronAPI.setSetting(key, value);
@@ -254,10 +254,10 @@ export default function Settings() {
               style={{ background: 'transparent', border: 'none' }}
               styles={{ body: { padding: '20px 24px' } }}
               tabList={[
-                { key: 'printer', tab: '🖨️ 打印机' },
-                { key: 'label', tab: '📋 标签模板' },
-                { key: 'logo', tab: '🖼️ 公司Logo' },
-                { key: 'fields', tab: '⚙️ 字段配置' },
+                { key: 'printer', tab: '打印机' },
+                { key: 'label', tab: '标签模板' },
+                { key: 'logo', tab: '公司Logo' },
+                { key: 'fields', tab: '字段配置' },
               ]}
               activeTabKey={activeTab}
               onTabChange={(key) => setActiveTab(key)}
@@ -600,22 +600,22 @@ export default function Settings() {
               当前配置摘要
             </div>
             <Descriptions column={1} size="small" colon={false}>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>🖨️ 打印机</span>}>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>打印机</span>}>
                 {settings.printer_name || <Text style={{ color: '#8a8886' }}>未配置</Text>}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>📐 标签尺寸</span>}>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>标签尺寸</span>}>
                 {settings.label_width || 100} mm × {settings.label_height || 75} mm
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>🏢 公司名称</span>}>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>公司名称</span>}>
                 {settings.company_name || <Text style={{ color: '#8a8886' }}>未设置</Text>}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>📄 默认模板</span>}>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>默认模板</span>}>
                 {templates.find((t) => t.id === settings.label_template)?.name || '标准模板'}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>⚙️ 字段数量</span>}>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>字段数量</span>}>
                 {fieldDefs.length} 个
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>🖼️ Logo</span>}>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>Logo</span>}>
                 {settings.company_logo ? (
                   <img
                     src={settings.company_logo}
@@ -644,7 +644,7 @@ export default function Settings() {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>运行环境</span>}>
-                {window.electronAPI ? 'Electron' : '🌐 浏览器'}
+                {window.electronAPI ? 'Electron' : '浏览器'}
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>数据库</span>}>
                 SQLite (本地存储)

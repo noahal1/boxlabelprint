@@ -2,8 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, Row, Col, Table, Tag, Button, Empty, Spin, Typography, Space } from 'antd';
 import {
   FileTextOutlined, CheckCircleOutlined, ClockCircleOutlined,
-  PlusOutlined, UnorderedListOutlined, InboxOutlined, SnippetsOutlined,
-  RightOutlined, ReloadOutlined, SettingOutlined,
+  PlusOutlined, InboxOutlined, SnippetsOutlined,
+  RightOutlined, ReloadOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { BoxLabel, BoxType } from '../types';
@@ -222,7 +222,7 @@ export default function Dashboard() {
                   letterSpacing: 0.3,
                 }}
               >
-                {getGreeting()}！👋
+                {getGreeting()}！
               </Text>
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 400 }}>
                 今天是{' '}
@@ -281,9 +281,9 @@ export default function Dashboard() {
       </div>
 
       {/* ==============================================================
-          Fluent 2 统计卡片
+          Fluent 2 统计卡片（flex 等分，无右侧空白）
           ============================================================== */}
-      <Row gutter={[14, 14]}>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
         {statCards.map((card) => {
           const s = STAT_STYLES[card.key];
           const barRatio =
@@ -297,7 +297,10 @@ export default function Dashboard() {
                 : 0
               : null;
           return (
-            <Col xs={12} sm={8} lg={4} key={card.key}>
+            <div
+              key={card.key}
+              style={{ flex: '1 1 0%', minWidth: 140, display: 'flex' }}
+            >
               <div
                 className="hover-lift"
                 style={{
@@ -308,9 +311,12 @@ export default function Dashboard() {
                   position: 'relative',
                   overflow: 'hidden',
                   cursor: 'default',
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flex: 1 }}>
                   <div>
                     <div
                       style={{
@@ -349,7 +355,8 @@ export default function Dashboard() {
                     {card.icon}
                   </div>
                 </div>
-                {barRatio !== null && (
+                {/* 进度条或占位 — 保证所有卡片高度一致 */}
+                {barRatio !== null ? (
                   <div className="fluent-progress-mini">
                     <div
                       className="fluent-progress-mini-bar"
@@ -359,151 +366,56 @@ export default function Dashboard() {
                       }}
                     />
                   </div>
+                ) : (
+                  <div style={{ height: 13 }} />
                 )}
               </div>
-            </Col>
+            </div>
           );
         })}
-        <Col xs={0} sm={0} lg={4} />
-      </Row>
+      </div>
 
       {/* ==============================================================
-          Fluent 2 快捷操作 & 数据概览
+          Fluent 2 最近箱牌 & 数据概览（同一行，更紧凑）
           ============================================================== */}
       <Row gutter={[14, 14]} style={{ marginTop: 14 }}>
-        <Col xs={24} lg={14}>
-          <div className="fluent-card" style={{ padding: '20px 24px' }}>
-            <div className="fluent-section-title" style={{ marginBottom: 16 }}>
-              快捷操作
-              <span style={{ fontSize: 12, fontWeight: 400, color: '#8a8886' }}>常用功能快速入口</span>
-            </div>
-            <Row gutter={[12, 12]}>
-              <Col span={8}>
+        {/* 左侧：最近箱牌表格 */}
+        <Col xs={24} lg={14} style={{ display: 'flex' }}>
+          <Card
+            title={
+              <Space>
                 <div
-                  onClick={() => navigate('/create')}
-                  className="hover-lift"
                   style={{
-                    background: 'linear-gradient(135deg, #0078d4 0%, #2899f5 100%)',
-                    borderRadius: 12,
-                    padding: '18px 16px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    border: '1px solid rgba(255,255,255,0.3)',
+                    width: 3,
+                    height: 18,
+                    background: 'linear-gradient(180deg, #0078d4, #60cdff)',
+                    borderRadius: 2,
                   }}
-                >
-                  <PlusOutlined style={{ fontSize: 22, color: '#fff', marginBottom: 5 }} />
-                  <div style={{ color: '#fff', fontSize: 13.5, fontWeight: 600 }}>新建箱牌</div>
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, marginTop: 2 }}>创建新标签</div>
-                </div>
-              </Col>
-              <Col span={8}>
-                <div
-                  onClick={() => navigate('/list')}
-                  className="hover-lift"
-                  style={{
-                    background: 'rgba(255,255,255,0.85)',
-                    borderRadius: 12,
-                    padding: '18px 16px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    border: '1px solid #edebe9',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                >
-                  <UnorderedListOutlined style={{ fontSize: 22, color: '#0078d4', marginBottom: 5 }} />
-                  <div style={{ color: '#1a1a1f', fontSize: 13.5, fontWeight: 600 }}>箱牌管理</div>
-                  <div style={{ color: '#8a8886', fontSize: 11, marginTop: 2 }}>查看/搜索/删除</div>
-                </div>
-              </Col>
-              <Col span={8}>
-                <div
-                  onClick={() => navigate('/settings')}
-                  className="hover-lift"
-                  style={{
-                    background: 'rgba(255,255,255,0.85)',
-                    borderRadius: 12,
-                    padding: '18px 16px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    border: '1px solid #edebe9',
-                    backdropFilter: 'blur(8px)',
-                  }}
-                >
-                  <SettingOutlined style={{ fontSize: 22, color: '#8764b8', marginBottom: 5 }} />
-                  <div style={{ color: '#1a1a1f', fontSize: 13.5, fontWeight: 600 }}>系统设置</div>
-                  <div style={{ color: '#8a8886', fontSize: 11, marginTop: 2 }}>打印机/模板/字段</div>
-                </div>
-              </Col>
-            </Row>
-          </div>
-        </Col>
-
-        <Col xs={24} lg={10}>
-          <div className="fluent-card" style={{ padding: '20px 24px', height: '100%' }}>
-            <div className="fluent-section-title" style={{ marginBottom: 14 }}>
-              数据概览
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {[
-                { label: '总箱牌数', value: stats.total, color: '#0078d4' },
-                { label: '已打印', value: stats.printed, color: '#107c10' },
-                { label: '待打印', value: stats.pending, color: '#ff8c00' },
-                { label: '内箱', value: stats.inner, color: '#0078d4' },
-                { label: '外箱', value: stats.outer, color: '#8764b8' },
-              ].map((item) => (
-                <div key={item.label} className="fluent-data-row">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className={`fluent-dot`} style={{ background: item.color, boxShadow: `0 0 0 2px ${item.color}20` }} />
-                    <span style={{ fontSize: 13, color: '#605e5c' }}>{item.label}</span>
-                  </div>
-                  <Text strong style={{ fontSize: 14, color: item.color }}>
-                    {item.value}
-                  </Text>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Col>
-      </Row>
-
-      {/* ==============================================================
-          Fluent 2 最近箱牌
-          ============================================================== */}
-      <Card
-        title={
-          <Space>
-            <div
-              style={{
-                width: 3,
-                height: 18,
-                background: 'linear-gradient(180deg, #0078d4, #60cdff)',
-                borderRadius: 2,
-              }}
-            />
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1f' }}>最近创建的箱牌</span>
-            <Tag style={{ borderRadius: 4, fontSize: 11, lineHeight: '20px', margin: 0 }}>{recentLabels.length}</Tag>
-          </Space>
-        }
-        style={{
-          marginTop: 14,
-          borderRadius: 12,
-          border: '1px solid rgba(255,255,255,0.6)',
-          background: 'rgba(255,255,255,0.8)',
-          backdropFilter: 'blur(20px) saturate(1.2)',
-          WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
-        }}
-        styles={{ body: { padding: 0 } }}
-        extra={
-          <Button
-            type="link"
-            size="small"
-            onClick={() => navigate('/list')}
-            style={{ fontSize: 13, color: '#0078d4' }}
+                />
+                <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1f' }}>最近创建的箱牌</span>
+                <Tag style={{ borderRadius: 4, fontSize: 11, lineHeight: '20px', margin: 0 }}>{recentLabels.length}</Tag>
+              </Space>
+            }
+            style={{
+              width: '100%',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.6)',
+              background: 'rgba(255,255,255,0.8)',
+              backdropFilter: 'blur(20px) saturate(1.2)',
+              WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
+            }}
+            styles={{ body: { padding: 0 } }}
+            extra={
+              <Button
+                type="link"
+                size="small"
+                onClick={() => navigate('/list')}
+                style={{ fontSize: 13, color: '#0078d4' }}
+              >
+                查看全部 <RightOutlined style={{ fontSize: 11 }} />
+              </Button>
+            }
           >
-            查看全部 <RightOutlined style={{ fontSize: 11 }} />
-          </Button>
-        }
-      >
         {recentLabels.length > 0 ? (
           <Table
             dataSource={recentLabels}
@@ -558,6 +470,37 @@ export default function Dashboard() {
           </div>
         )}
       </Card>
+
+        </Col>
+
+        {/* 右侧：数据概览 */}
+        <Col xs={24} lg={10} style={{ display: 'flex' }}>
+          <div className="fluent-card" style={{ padding: '20px 24px', width: '100%' }}>
+            <div className="fluent-section-title" style={{ marginBottom: 14 }}>
+              数据概览
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {[
+                { label: '总箱牌数', value: stats.total, color: '#0078d4' },
+                { label: '已打印', value: stats.printed, color: '#107c10' },
+                { label: '待打印', value: stats.pending, color: '#ff8c00' },
+                { label: '内箱', value: stats.inner, color: '#0078d4' },
+                { label: '外箱', value: stats.outer, color: '#8764b8' },
+              ].map((item) => (
+                <div key={item.label} className="fluent-data-row">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className={`fluent-dot`} style={{ background: item.color, boxShadow: `0 0 0 2px ${item.color}20` }} />
+                    <span style={{ fontSize: 13, color: '#605e5c' }}>{item.label}</span>
+                  </div>
+                  <Text strong style={{ fontSize: 14, color: item.color }}>
+                    {item.value}
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Col>
+      </Row>
 
       {/* ---- 底部 ---- */}
       <div

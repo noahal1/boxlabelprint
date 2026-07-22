@@ -151,16 +151,24 @@ ipcMain.handle('db:getBoxLabels', async (event, filters) => {
 ipcMain.handle('db:createBoxLabel', async (event, data) => {
   const db = getDatabase();
   const customFieldsJson = JSON.stringify(data.custom_fields || {});
+
+  // 动态检测表结构，兼容不同版本遗留列（如 product_name）
+  const tableInfo = db.exec("PRAGMA table_info(box_labels)");
+  const columns = tableInfo[0]?.values.map(v => v[1]) || [];
+
+  const baseCols = ['box_number', 'box_type', 'custom_fields', 'qr_content'];
+  const baseVals = [data.box_number, data.box_type || 'inner', customFieldsJson, data.qr_content || data.box_number];
+
+  if (columns.includes('product_name')) {
+    baseCols.push('product_name');
+    baseVals.push(data.product_name || '');
+  }
+
   const stmt = db.prepare(`
-    INSERT INTO box_labels (box_number, box_type, custom_fields, qr_content, status, created_at)
-    VALUES (?, ?, ?, ?, 'pending', datetime('now', 'localtime'))
+    INSERT INTO box_labels (${baseCols.join(', ')}, status, created_at)
+    VALUES (${baseVals.map(() => '?').join(', ')}, 'pending', datetime('now', 'localtime'))
   `);
-  const result = stmt.run(
-    data.box_number,
-    data.box_type || 'inner',
-    customFieldsJson,
-    data.qr_content || data.box_number
-  );
+  const result = stmt.run(baseVals);
   return { id: result.lastInsertRowid };
 });
 

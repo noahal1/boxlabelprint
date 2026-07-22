@@ -24,8 +24,21 @@ const standardTemplate: LabelTemplate = {
             {!companyName && (
               <div style={{ fontWeight: 'bold', fontSize: 11, marginBottom: 4, color: '#666', textAlign: 'center' }}>箱牌标签</div>
             )}
-            {data.displayFields.map((f) => (
-              <RowItem key={f.key} label={f.label} value={f.value} />
+            {/* 字段按两列并排显示：供应商代码 | 物料编码 同一行 */}
+            {data.displayFields.reduce<(typeof data.displayFields)[]>((rows, f, i) => {
+              if (i % 2 === 0) rows.push([f]);
+              else rows[rows.length - 1].push(f);
+              return rows;
+            }, []).map((pair, idx) => (
+              <div key={idx} style={{ display: 'flex', gap: 12, marginBottom: 2 }}>
+                {pair.map((f) => (
+                  <div key={f.key} style={{ flex: 1, minWidth: 0 }}>
+                    <RowItem label={f.label} value={f.value} />
+                  </div>
+                ))}
+                {/* 奇数个字段时补空白占位 */}
+                {pair.length < 2 && <div style={{ flex: 1 }} />}
+              </div>
             ))}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, minWidth: 80 }}>

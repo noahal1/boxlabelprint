@@ -9,12 +9,17 @@ const compactTemplate: LabelTemplate = {
   thumbnail: { width: 120, height: 86, color: '#f6ffed' },
 
   render(data, options) {
-    const { labelWidth = 280 } = options || {};
+    const { companyName = '', labelWidth = 280 } = options || {};
     const firstFields = data.displayFields.slice(0, 4);
 
     return (
       <div style={{ width: labelWidth, padding: '8px 10px', background: '#fff', border: '2px solid #000', fontFamily: "'Courier New', 'Microsoft YaHei', monospace" }}>
-        <div style={{ textAlign: 'center', fontSize: 16, fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: 1, marginBottom: 6, paddingBottom: 4, borderBottom: '1px solid #000' }}>
+        {companyName && (
+          <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 'bold', marginBottom: 4, paddingBottom: 4, borderBottom: '1px solid #000', letterSpacing: 1 }}>
+            {companyName}
+          </div>
+        )}
+        <div style={{ textAlign: 'center', fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: 1, marginBottom: 6, paddingBottom: 4, borderBottom: '1px solid #000' }}>
           {data.box_number}
         </div>
 

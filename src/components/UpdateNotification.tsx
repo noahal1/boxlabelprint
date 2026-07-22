@@ -23,7 +23,6 @@ export default function UpdateNotification() {
   const [modalVisible, setModalVisible] = useState(false);
   const version = pkg.version;
 
-  // 注册更新事件监听
   useEffect(() => {
     if (!window.electronAPI) return;
 
@@ -46,7 +45,6 @@ export default function UpdateNotification() {
     unsubs.push(
       window.electronAPI.onUpdateNotAvailable(() => {
         setUpdateState('not-available');
-        // 短暂显示后重置
         setTimeout(() => setUpdateState('idle'), 3000);
       })
     );
@@ -104,87 +102,131 @@ export default function UpdateNotification() {
 
   const handleClose = () => {
     setModalVisible(false);
-    // 终态时重置状态，清除 badge
     if (updateState === 'not-available' || updateState === 'error') {
       setTimeout(() => setUpdateState('idle'), 300);
     }
   };
 
-  // 是否显示右上角更新提示徽标
   const showBadge = updateState === 'available' || updateState === 'downloaded';
 
   return (
     <>
-      {/* 右上角更新按钮 */}
+      {/* Fluent 2 更新按钮 */}
       <Tooltip title="检查更新">
-        <Badge dot={showBadge} color={updateState === 'downloaded' ? '#52c41a' : '#1677ff'}>
+        <Badge dot={showBadge} color={updateState === 'downloaded' ? '#107c10' : '#0078d4'}>
           <Button
             type="text"
             size="small"
             icon={<ReloadOutlined />}
             onClick={handleCheckUpdate}
             loading={updateState === 'checking'}
-            style={{ color: '#999' }}
+            style={{
+              color: '#605e5c',
+              borderRadius: 6,
+              transition: 'all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f3f2f1';
+              e.currentTarget.style.color = '#1a1a1f';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#605e5c';
+            }}
           />
         </Badge>
       </Tooltip>
 
-      {/* 更新对话框 */}
+      {/* Fluent 2 更新对话框 */}
       <Modal
-        title="软件更新"
+        title={
+          <Space>
+            <DownloadOutlined style={{ color: '#0078d4' }} />
+            <span>软件更新</span>
+          </Space>
+        }
         open={modalVisible}
         onCancel={handleClose}
         width={480}
         footer={
           <Space>
-            <Button onClick={handleClose}>关闭</Button>
+            <Button
+              onClick={handleClose}
+              style={{ borderRadius: 6, height: 34 }}
+            >
+              关闭
+            </Button>
             {updateState === 'available' && (
-              <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownload}>
+              <Button
+                type="primary"
+                icon={<DownloadOutlined />}
+                onClick={handleDownload}
+                style={{ borderRadius: 6, height: 34 }}
+              >
                 下载更新
               </Button>
             )}
             {updateState === 'downloaded' && (
-              <Button type="primary" icon={<CheckCircleOutlined />} onClick={handleInstall}>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={handleInstall}
+                style={{ borderRadius: 6, height: 34 }}
+              >
                 立即安装
               </Button>
             )}
             {updateState === 'downloading' && (
-              <Button disabled>下载中...</Button>
+              <Button disabled style={{ borderRadius: 6, height: 34 }}>
+                下载中...
+              </Button>
             )}
           </Space>
         }
+        styles={{
+          body: {
+            padding: '16px 24px',
+          },
+        }}
       >
+        {/* 检查中 */}
         {updateState === 'checking' && (
           <div style={{ textAlign: 'center', padding: 24 }}>
-            <ReloadOutlined spin style={{ fontSize: 36, color: '#1677ff' }} />
-            <Paragraph style={{ marginTop: 12 }}>正在检查更新...</Paragraph>
+            <ReloadOutlined spin style={{ fontSize: 36, color: '#0078d4' }} />
+            <Paragraph style={{ marginTop: 12, color: '#605e5c' }}>
+              正在检查更新...
+            </Paragraph>
           </div>
         )}
 
+        {/* 有可用更新 */}
         {updateState === 'available' && updateInfo && (
           <div>
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <DownloadOutlined style={{ fontSize: 36, color: '#1677ff' }} />
-              <Title level={5} style={{ marginTop: 8 }}>
+              <DownloadOutlined style={{ fontSize: 36, color: '#0078d4' }} />
+              <Title level={5} style={{ marginTop: 8, color: '#1a1a1f' }}>
                 发现新版本 v{updateInfo.version}
               </Title>
-              <Text type="secondary">
+              <Text style={{ color: '#605e5c', fontSize: 13 }}>
                 当前版本: v{version} → 新版本: v{updateInfo.version}
               </Text>
             </div>
             {updateInfo.releaseNotes && (
               <div
                 style={{
-                  background: '#f5f5f5',
+                  background: '#faf9f8',
                   padding: 12,
-                  borderRadius: 6,
+                  borderRadius: 8,
                   fontSize: 12,
                   maxHeight: 150,
                   overflow: 'auto',
+                  border: '1px solid #edebe9',
                 }}
               >
-                <Text strong>更新内容：</Text>
-                <div style={{ marginTop: 4, whiteSpace: 'pre-wrap' }}>
+                <Text strong style={{ color: '#1a1a1f' }}>
+                  更新内容：
+                </Text>
+                <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#605e5c' }}>
                   {updateInfo.releaseNotes}
                 </div>
               </div>
@@ -192,52 +234,60 @@ export default function UpdateNotification() {
           </div>
         )}
 
+        {/* 下载中 */}
         {updateState === 'downloading' && progress && (
           <div style={{ textAlign: 'center', padding: 24 }}>
             <Progress
               type="circle"
               percent={Math.round(progress.percent)}
               size={100}
-              status="active"
+              strokeColor="#0078d4"
+              trailColor="#edebe9"
+              format={(p) => (
+                <span style={{ color: '#1a1a1f', fontWeight: 600 }}>{p}%</span>
+              )}
             />
-            <Paragraph style={{ marginTop: 12 }}>
+            <Paragraph style={{ marginTop: 12, color: '#605e5c' }}>
               正在下载更新...
               <br />
-              <Text type="secondary" style={{ fontSize: 12 }}>
+              <Text style={{ color: '#8a8886', fontSize: 12 }}>
                 {formatBytes(progress.transferred)} / {formatBytes(progress.total)}
               </Text>
             </Paragraph>
           </div>
         )}
 
+        {/* 下载完成 */}
         {updateState === 'downloaded' && (
           <div style={{ textAlign: 'center', padding: 24 }}>
-            <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />
-            <Title level={5} style={{ marginTop: 12 }}>
+            <CheckCircleOutlined style={{ fontSize: 48, color: '#107c10' }} />
+            <Title level={5} style={{ marginTop: 12, color: '#1a1a1f' }}>
               更新已就绪
             </Title>
-            <Paragraph type="secondary">
+            <Paragraph style={{ color: '#605e5c' }}>
               新版本 v{updateInfo?.version} 已下载完成，点击立即安装重启应用
             </Paragraph>
           </div>
         )}
 
+        {/* 错误 */}
         {updateState === 'error' && (
           <div style={{ textAlign: 'center', padding: 24 }}>
-            <CloseOutlined style={{ fontSize: 36, color: '#ff4d4f' }} />
-            <Paragraph style={{ marginTop: 12, color: '#ff4d4f' }}>
+            <CloseOutlined style={{ fontSize: 36, color: '#d13438' }} />
+            <Paragraph style={{ marginTop: 12, color: '#d13438' }}>
               检查更新失败
             </Paragraph>
-            <Text type="secondary" style={{ fontSize: 12 }}>
+            <Text style={{ color: '#8a8886', fontSize: 12 }}>
               {errorMsg || '请检查网络后重试'}
             </Text>
           </div>
         )}
 
+        {/* 已是最新 */}
         {updateState === 'not-available' && (
           <div style={{ textAlign: 'center', padding: 24 }}>
-            <CheckCircleOutlined style={{ fontSize: 36, color: '#52c41a' }} />
-            <Paragraph style={{ marginTop: 12 }}>
+            <CheckCircleOutlined style={{ fontSize: 36, color: '#107c10' }} />
+            <Paragraph style={{ marginTop: 12, color: '#605e5c' }}>
               当前已是最新版本 (v{version})
             </Paragraph>
           </div>

@@ -29,7 +29,6 @@ export default function BoxLabelForm() {
 
   const loadFields = useCallback(async (type: BoxType) => {
     setFieldsReady(false);
-    form.resetFields();
     const defs = await loadFieldDefinitions(type);
     setFieldDefs(getSortedFields(defs));
     setFieldsReady(true);
@@ -83,7 +82,7 @@ export default function BoxLabelForm() {
         displayFields: fieldDefs.map((f) => ({
           key: f.key,
           label: f.label,
-          value: values[f.key]?.trim() || '',
+          value: String(values[f.key] ?? '').trim(),
         })),
       });
       setPreviewVisible(true);
@@ -202,7 +201,7 @@ export default function BoxLabelForm() {
           </Space>
         </div>
 
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} key={boxType}>
           {/* ---- 箱号区域 (Fluent 2 高亮卡片) ---- */}
           <div
             style={{

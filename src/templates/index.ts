@@ -3,6 +3,7 @@ import standardTemplate from './standard';
 import compactTemplate from './compact';
 import withLogoTemplate from './withLogo';
 import detailedTemplate from './detailed';
+import factoryTemplate from './factory';
 
 /** 所有可用模板 */
 export const templates: LabelTemplate[] = [
@@ -10,6 +11,7 @@ export const templates: LabelTemplate[] = [
   compactTemplate,
   withLogoTemplate,
   detailedTemplate,
+  factoryTemplate,
 ];
 
 /** 根据 ID 获取模板 */

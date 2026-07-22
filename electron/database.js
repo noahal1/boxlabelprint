@@ -20,6 +20,7 @@ const INNER_FIELDS = JSON.stringify([
   { key: 'batch_no', label: '批号', type: 'text', required: true, sort_order: 5 },
   { key: 'length', label: '长度', type: 'number', required: false, sort_order: 6 },
   { key: 'net_weight', label: '净重', type: 'number', required: true, sort_order: 7 },
+  { key: 'gross_weight', label: '毛重', type: 'number', required: true, sort_order: 8 },
 ]);
 
 /** 外箱默认字段 */
@@ -104,7 +105,7 @@ async function initDatabase() {
       insertSetting.run(['label_height', '75']);
       insertSetting.run(['company_name', '我的公司']);
       insertSetting.run(['company_logo', '']);
-      insertSetting.run(['label_template', 'standard']);
+      insertSetting.run(['label_template', 'factory']);
 
       // 插入内箱/外箱字段定义
       const hasInner = db.exec("SELECT value FROM settings WHERE key = 'field_definitions_inner'");

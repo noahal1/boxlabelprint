@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-  Table, Card, Button, Tag, Space, Input, Select, Popconfirm, message, Modal, Typography, Row, Col, Tooltip,
+  Table, Button, Tag, Space, Input, Select, Popconfirm, message, Modal, Typography, Tooltip,
 } from 'antd';
 import {
   SearchOutlined, PrinterOutlined, DeleteOutlined, ReloadOutlined, FileTextOutlined,
-  HistoryOutlined, InboxOutlined, SnippetsOutlined, DownloadOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
 import type { BoxLabel, FieldDefinition, BoxType } from '../types';
 import { BOX_TYPE_LABELS } from '../types';
@@ -12,14 +12,6 @@ import { loadFieldDefinitions, getSortedFields, extractDisplayValues } from '../
 import PrintPreview from '../components/PrintPreview';
 
 const { Text } = Typography;
-
-const STAT_STYLES: Record<string, { gradient: string; icon: string; accent: string }> = {
-  all:     { gradient: 'linear-gradient(135deg, #deecf9 0%, #f0f6fc 100%)', icon: '#0078d4', accent: '#0078d4' },
-  inner:   { gradient: 'linear-gradient(135deg, #e0f2ff 0%, #ecf7ff 100%)', icon: '#0078d4', accent: '#0078d4' },
-  outer:   { gradient: 'linear-gradient(135deg, #f0e6ff 0%, #f5f0ff 100%)', icon: '#8764b8', accent: '#8764b8' },
-  printed: { gradient: 'linear-gradient(135deg, #dff6dd 0%, #ecf9eb 100%)', icon: '#107c10', accent: '#107c10' },
-  pending: { gradient: 'linear-gradient(135deg, #fff4ce 0%, #fff9e6 100%)', icon: '#ff8c00', accent: '#ff8c00' },
-};
 
 export default function BoxLabelList() {
   const [loading, setLoading] = useState(false);
@@ -95,14 +87,6 @@ export default function BoxLabelList() {
     }
   };
 
-  const statItems = [
-    { key: 'all',     title: '全部',  value: data.length, icon: <FileTextOutlined /> },
-    { key: 'inner',   title: '内箱',  value: data.filter(d => d.box_type === 'inner').length, icon: <InboxOutlined /> },
-    { key: 'outer',   title: '外箱',  value: data.filter(d => d.box_type === 'outer').length, icon: <SnippetsOutlined /> },
-    { key: 'printed', title: '已打印', value: data.filter(d => d.status === 'printed').length, icon: <DownloadOutlined /> },
-    { key: 'pending', title: '待打印', value: data.filter(d => d.status === 'pending').length, icon: <PrinterOutlined /> },
-  ];
-
   const columns: any[] = [
     {
       title: '箱号', dataIndex: 'box_number', key: 'box_number', width: 140, fixed: 'left',
@@ -169,38 +153,6 @@ export default function BoxLabelList() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* ====== Fluent 2 统计卡片 ====== */}
-      <Row gutter={[14, 14]} style={{ marginBottom: 14 }}>
-        {statItems.map((s) => {
-          const c = STAT_STYLES[s.key];
-          return (
-            <Col span={4} key={s.key}>
-              <div className="hover-lift" style={{
-                background: c.gradient,
-                borderRadius: 14,
-                padding: '16px 14px',
-                border: '1px solid rgba(255,255,255,0.6)',
-                cursor: 'default',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: 11.5, color: '#605e5c', marginBottom: 2, fontWeight: 500 }}>{s.title}</div>
-                    <div className="fluent-stat" style={{ color: c.accent, fontSize: 24 }}>{s.value}</div>
-                  </div>
-                  <div style={{
-                    width: 34, height: 34, background: c.icon, borderRadius: 10,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0, opacity: 0.12, fontSize: 18, color: '#fff',
-                  }}>
-                    {s.icon}
-                  </div>
-                </div>
-              </div>
-            </Col>
-          );
-        })}
-      </Row>
-
       {/* ====== Fluent 2 操作栏 ====== */}
       <div className="fluent-card" style={{ padding: '14px 18px', marginBottom: 14 }}>
         <Space wrap size={10}>

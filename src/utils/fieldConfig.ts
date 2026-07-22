@@ -35,6 +35,7 @@ export function getDefaultFieldDefinitions(boxType: BoxType): FieldDefinition[] 
     { key: 'batch_no', label: '批号', type: 'text', required: true, sort_order: 5 },
     { key: 'length', label: '长度', type: 'number', required: false, sort_order: 6 },
     { key: 'net_weight', label: '净重', type: 'number', required: true, sort_order: 7 },
+    { key: 'gross_weight', label: '毛重', type: 'number', required: true, sort_order: 8 },
   ];
 }
 
@@ -66,7 +67,7 @@ export function buildSubmitData(
 } {
   const custom_fields: Record<string, string> = {};
   for (const field of defs) {
-    custom_fields[field.key] = formValues[field.key]?.trim() || '';
+    custom_fields[field.key] = String(formValues[field.key] ?? '').trim();
   }
   return {
     box_number: boxNumber,
