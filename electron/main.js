@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const net = require('net');
 const { autoUpdater } = require('electron-updater');
 const { initDatabase, getDatabase } = require('./database');
 
@@ -159,9 +160,16 @@ ipcMain.handle('db:createBoxLabel', async (event, data) => {
   const baseCols = ['box_number', 'box_type', 'custom_fields', 'qr_content'];
   const baseVals = [data.box_number, data.box_type || 'inner', customFieldsJson, data.qr_content || data.box_number];
 
-  if (columns.includes('product_name')) {
-    baseCols.push('product_name');
-    baseVals.push(data.product_name || '');
+  // 自动检测所有未在基础集中的遗留列（兼容旧版数据库 schema）
+  const skipCols = new Set([
+    'id', 'box_number', 'box_type', 'custom_fields', 'qr_content',
+    'status', 'print_count', 'created_at', 'printed_at',
+  ]);
+  for (const col of columns) {
+    if (!skipCols.has(col)) {
+      baseCols.push(col);
+      baseVals.push(data[col] || '');
+    }
   }
 
   const stmt = db.prepare(`
@@ -290,19 +298,124 @@ ipcMain.handle('window:isMaximized', () => {
 
 // ========== 打印 IPC ==========
 
+/**
+ * 通过 TCP 发送 ZPL 数据到标签打印机（标准端口 9100）
+ */
+function sendZplToPrinter(ip, port, zplData) {
+  return new Promise((resolve, reject) => {
+    const client = new net.Socket();
+    const timeout = 10000; // 10 秒超时
+
+    client.setTimeout(timeout);
+
+    client.connect(port, ip, () => {
+      client.write(zplData, 'utf8', (err) => {
+        if (err) {
+          client.destroy();
+          reject(new Error(`写入数据失败: ${err.message}`));
+          return;
+        }
+        // 给打印机一点时间处理
+        setTimeout(() => {
+          client.destroy();
+          resolve();
+        }, 500);
+      });
+    });
+
+    client.on('timeout', () => {
+      client.destroy();
+      reject(new Error(`连接打印机超时（${timeout / 1000} 秒）`));
+    });
+
+    client.on('error', (err) => {
+      client.destroy();
+      reject(new Error(`无法连接到打印机 ${ip}:${port} — ${err.message}`));
+    });
+  });
+}
+
 ipcMain.handle('print:send', async (event, zplData) => {
   try {
     const db = getDatabase();
+    const printerIp = db.prepare("SELECT value FROM settings WHERE key = 'printer_ip'").get();
+    const printerPort = db.prepare("SELECT value FROM settings WHERE key = 'printer_port'").get();
     const printerName = db.prepare("SELECT value FROM settings WHERE key = 'printer_name'").get();
-    if (!printerName || !printerName.value) {
-      return { success: false, error: '请先在设置中配置打印机名称' };
+
+    if (!printerIp || !printerIp.value) {
+      return { success: false, error: '请先在设置中配置打印机的 IP 地址' };
     }
+
+    const ip = printerIp.value.trim();
+    const port = parseInt(printerPort?.value || '9100', 10);
+    const name = printerName?.value || ip;
+
+    console.log(`正在发送 ZPL 到打印机 ${name} (${ip}:${port})...`);
+    await sendZplToPrinter(ip, port, zplData);
+    console.log('ZPL 发送成功');
+
     return {
       success: true,
-      message: `打印指令已发送到打印机: ${printerName.value}`,
-      data: zplData,
-      printerName: printerName.value,
+      message: `打印指令已发送到 ${name}`,
+      printerName: name,
     };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+/**
+ * 系统打印预览：打开系统原生打印对话框打印 HTML 版标签
+ */
+ipcMain.handle('print:systemPreview', async (event, labelHtml) => {
+  try {
+    const printWindow = new BrowserWindow({
+      width: 480,
+      height: 600,
+      show: false,
+      title: '标签打印预览',
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+
+    printWindow.loadURL(
+      `data:text/html;charset=utf-8,${encodeURIComponent(labelHtml)}`
+    );
+
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error('页面加载超时')), 15000);
+
+      printWindow.webContents.on('did-finish-load', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+    });
+
+    // 安全清理：防止回调未触发时窗口泄漏
+    const safetyTimer = setTimeout(() => {
+      if (!printWindow.isDestroyed()) {
+        printWindow.close();
+      }
+    }, 120000);
+
+    // 打开系统打印对话框
+    printWindow.show();
+    printWindow.webContents.print(
+      { silent: false, printBackground: true },
+      (success, failureReason) => {
+        if (!success) {
+          console.log('打印取消或失败:', failureReason);
+        }
+        clearTimeout(safetyTimer);
+        if (!printWindow.isDestroyed()) {
+          printWindow.close();
+        }
+      }
+    );
+
+    return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
   }

@@ -80,6 +80,7 @@ export interface ElectronAPI {
 
   // 打印
   printSend: (zplData: string) => Promise<{ success: boolean; error?: string; data?: string; message?: string; printerName?: string }>;
+  printSystemPreview: (labelHtml: string) => Promise<{ success: boolean; error?: string }>;
 
   // 自动更新
   updateCheck: () => Promise<{ success: boolean; error?: string }>;

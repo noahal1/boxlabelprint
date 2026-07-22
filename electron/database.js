@@ -101,6 +101,8 @@ async function initDatabase() {
       // 插入默认设置
       const insertSetting = db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`);
       insertSetting.run(['printer_name', '']);
+      insertSetting.run(['printer_ip', '']);
+      insertSetting.run(['printer_port', '9100']);
       insertSetting.run(['label_width', '100']);
       insertSetting.run(['label_height', '75']);
       insertSetting.run(['company_name', '我的公司']);

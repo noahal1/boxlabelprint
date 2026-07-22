@@ -8,17 +8,18 @@ import {
   UploadOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, ArrowUpOutlined, ArrowDownOutlined,
 } from '@ant-design/icons';
 import packageJson from '../../package.json';
-import { templates } from '../templates';
 import { loadFieldDefinitions, getDefaultFieldDefinitions, getSortedFields } from '../utils/fieldConfig';
 import type { FieldDefinition, BoxType } from '../types';
 import { BOX_TYPE_LABELS } from '../types';
 
 const { Title, Text, Paragraph } = Typography;
 
-const PRINTER_HELP = `如何获取打印机名称？\n1. 打开 Windows 设置 → 蓝牙和其他设备 → 打印机和扫描仪\n2. 找到你的不干胶打印机\n3. 复制打印机名称粘贴到上方`;
+const PRINTER_HELP = `如何获取打印机 IP 地址？\n1. 在打印机面板上打印一张"网络配置页"（Network Config / Self Test）\n2. 查找 "IP Address" 字段，通常格式如 192.168.1.xxx\n3. 将该 IP 地址填入上方，端口保持默认 9100 即可`;
 
 type SettingsData = {
   printer_name: string;
+  printer_ip: string;
+  printer_port: string;
   label_width: number;
   label_height: number;
   company_name: string;
@@ -29,6 +30,8 @@ type SettingsData = {
 
 const defaultSettings: SettingsData = {
   printer_name: '',
+  printer_ip: '',
+  printer_port: '9100',
   label_width: 100,
   label_height: 75,
   company_name: '我的公司',
@@ -62,6 +65,8 @@ export default function Settings() {
       setLogoPreview(merged.company_logo || '');
       form.setFieldsValue({
         printer_name: merged.printer_name,
+        printer_ip: merged.printer_ip,
+        printer_port: merged.printer_port || '9100',
         label_width: Number(merged.label_width),
         label_height: Number(merged.label_height),
         company_name: merged.company_name,
@@ -92,6 +97,8 @@ export default function Settings() {
       if (!window.electronAPI) return;
       const saveData: Record<string, string> = {
         printer_name: values.printer_name || '',
+        printer_ip: values.printer_ip || '',
+        printer_port: values.printer_port || '9100',
         label_width: String(values.label_width || 100),
         label_height: String(values.label_height || 75),
         company_name: values.company_name || '',
@@ -259,7 +266,6 @@ export default function Settings() {
               styles={{ body: { padding: '20px 24px' } }}
               tabList={[
                 { key: 'printer', tab: '打印机' },
-                { key: 'label', tab: '标签模板' },
                 { key: 'logo', tab: '公司Logo' },
                 { key: 'fields', tab: '字段配置' },
               ]}
@@ -276,9 +282,34 @@ export default function Settings() {
                     showIcon
                     style={{ marginBottom: 24, borderRadius: 8, border: '1px solid #deecf9' }}
                   />
-                  <Form.Item name="printer_name" label="打印机名称" tooltip="请填写 Windows 中显示的打印机名称">
+                  <Form.Item
+                    name="printer_ip"
+                    label="打印机 IP 地址"
+                    required
+                    rules={[
+                      { required: true, message: '请输入打印机 IP 地址' },
+                      {
+                        pattern: /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
+                        message: 'IP 地址格式不正确，例：192.168.1.100',
+                      },
+                    ]}
+                  >
                     <Input
-                      placeholder="例：Zebra ZD421"
+                      placeholder="例：192.168.1.100"
+                      size="large"
+                      style={{ borderRadius: 6, fontFamily: 'monospace' }}
+                    />
+                  </Form.Item>
+                  <Form.Item name="printer_port" label="端口号" tooltip="标签打印机默认端口为 9100">
+                    <Input
+                      placeholder="9100"
+                      size="large"
+                      style={{ borderRadius: 6, width: 160, fontFamily: 'monospace' }}
+                    />
+                  </Form.Item>
+                  <Form.Item name="printer_name" label="打印机名称（仅用于显示）">
+                    <Input
+                      placeholder="例：一楼仓库标签打印机"
                       prefix={<PrinterOutlined />}
                       size="large"
                       style={{ borderRadius: 6 }}
@@ -293,109 +324,18 @@ export default function Settings() {
                     </Form.Item>
                   </Space>
                   <Divider style={{ borderColor: '#edebe9' }} />
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    icon={<SaveOutlined />}
-                    loading={saving}
-                    size="large"
-                    style={{ height: 40, borderRadius: 8, padding: '0 26px', fontWeight: 600 }}
-                  >
-                    保存设置
-                  </Button>
-                </Form>
-              )}
 
-              {/* 标签模板 */}
-              {activeTab === 'label' && (
-                <Form form={form} layout="vertical" onFinish={handleSave} initialValues={defaultSettings}>
-                  <div style={{ marginBottom: 20 }}>
-                    <Text strong style={{ fontSize: 14, color: '#1a1a1f' }}>选择默认标签模板</Text>
-                    <Paragraph style={{ color: '#605e5c', marginTop: 4, marginBottom: 12, fontSize: 13 }}>
-                      新建箱牌时将默认使用此模板
-                    </Paragraph>
-
-                    <Row gutter={[12, 12]}>
-                      {templates.map((t) => {
-                        const selected = form.getFieldValue('label_template') === t.id;
-                        return (
-                          <Col span={8} key={t.id}>
-                            <div
-                              onClick={() => form.setFieldsValue({ label_template: t.id })}
-                              className="hover-lift"
-                              style={{
-                                padding: 14,
-                                background: selected ? '#deecf9' : 'rgba(255,255,255,0.72)',
-                                border: `2px solid ${selected ? '#0078d4' : '#edebe9'}`,
-                                borderRadius: 12,
-                                textAlign: 'center',
-                                cursor: 'pointer',
-                                backdropFilter: selected ? 'none' : 'blur(8px)',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  height: 60,
-                                  background: '#fff',
-                                  border: '1px solid #edebe9',
-                                  borderRadius: 8,
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  marginBottom: 8,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: 40,
-                                    height: 28,
-                                    border: '1px solid #d2d0ce',
-                                    borderRadius: 2,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    position: 'relative',
-                                  }}
-                                >
-                                  <div
-                                    style={{
-                                      width: '100%',
-                                      height: '100%',
-                                      background: t.thumbnail.color,
-                                      borderRadius: 1,
-                                      opacity: 0.3,
-                                    }}
-                                  />
-                                  <span style={{ position: 'absolute', fontSize: 7, color: '#605e5c' }}>
-                                    {t.name}
-                                  </span>
-                                </div>
-                              </div>
-                              <div
-                                style={{
-                                  fontSize: 13,
-                                  fontWeight: 600,
-                                  color: selected ? '#0078d4' : '#1a1a1f',
-                                }}
-                              >
-                                {t.name}
-                              </div>
-                              <div style={{ fontSize: 11, color: '#8a8886', marginTop: 2 }}>
-                                {t.defaultSize.width}×{t.defaultSize.height}mm
-                              </div>
-                            </div>
-                          </Col>
-                        );
-                      })}
-                    </Row>
-                  </div>
-
-                  <Form.Item name="company_name" label="公司名称" style={{ marginTop: 8 }}>
+                  <Text strong style={{ fontSize: 14, color: '#1a1a1f' }}>公司信息</Text>
+                  <Paragraph style={{ color: '#605e5c', marginTop: 4, marginBottom: 12, fontSize: 13 }}>
+                    这些信息将显示在标签顶部
+                  </Paragraph>
+                  <Form.Item name="company_name" label="公司名称">
                     <Input placeholder="将显示在箱牌标签顶部" maxLength={50} style={{ borderRadius: 6 }} />
                   </Form.Item>
-                  <Form.Item name="department_name" label="部门名称" style={{ marginTop: 4 }}>
+                  <Form.Item name="department_name" label="部门名称">
                     <Input placeholder="例：铝箔事业一部" maxLength={50} style={{ borderRadius: 6 }} />
                   </Form.Item>
+
                   <Divider style={{ borderColor: '#edebe9' }} />
                   <Button
                     type="primary"
@@ -607,8 +547,15 @@ export default function Settings() {
               当前配置摘要
             </div>
             <Descriptions column={1} size="small" colon={false}>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>打印机</span>}>
-                {settings.printer_name || <Text style={{ color: '#8a8886' }}>未配置</Text>}
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>打印机 IP</span>}>
+                {settings.printer_ip ? (
+                  <Text code style={{ fontSize: 12 }}>{settings.printer_ip}:{settings.printer_port || '9100'}</Text>
+                ) : (
+                  <Text style={{ color: '#8a8886' }}>未配置</Text>
+                )}
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>打印机名称</span>}>
+                {settings.printer_name || <Text style={{ color: '#8a8886' }}>-</Text>}
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>标签尺寸</span>}>
                 {settings.label_width || 100} mm × {settings.label_height || 75} mm
@@ -619,8 +566,8 @@ export default function Settings() {
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>部门名称</span>}>
                 {settings.department_name || <Text style={{ color: '#8a8886' }}>未设置</Text>}
               </Descriptions.Item>
-              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>默认模板</span>}>
-                {templates.find((t) => t.id === settings.label_template)?.name || '标准模板'}
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>标签模板</span>}>
+                工厂模板
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>字段数量</span>}>
                 {fieldDefs.length} 个

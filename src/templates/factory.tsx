@@ -33,7 +33,7 @@ const factoryTemplate: LabelTemplate = {
   thumbnail: { width: 120, height: 96, color: '#e6f4ff' },
 
   render(data, options) {
-    const { companyName = '', departmentName = '', labelWidth = 420 } = options || {};
+    const { companyName = '', departmentName = '', labelWidth = 420, boxType } = options || {};
     const fields = data.displayFields;
 
     // border color
@@ -41,8 +41,8 @@ const factoryTemplate: LabelTemplate = {
 
     // 公用单元格样式
     const labelStyle: React.CSSProperties = {
-      padding: '3px 6px',
-      fontSize: 8.5,
+      padding: '3px 4px',
+      fontSize: 8,
       fontWeight: 600,
       color: '#333',
       borderRight: `1px solid ${bc}`,
@@ -52,13 +52,13 @@ const factoryTemplate: LabelTemplate = {
     };
     const valueStyle: React.CSSProperties = {
       padding: '3px 6px',
-      fontSize: 9,
+      fontSize: 8.5,
       fontWeight: 'bold',
       fontFamily: "'Courier New', monospace",
       borderBottom: `1px solid ${bc}`,
-      whiteSpace: 'nowrap',
+      wordBreak: 'break-all',
+      lineHeight: 1.3,
       overflow: 'hidden',
-      textOverflow: 'ellipsis',
     };
 
     // 取字段辅助
@@ -108,8 +108,8 @@ const factoryTemplate: LabelTemplate = {
           <colgroup>
             <col style={{ width: '18%' }} />
             <col style={{ width: '27%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '45%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '42%' }} />
           </colgroup>
           <tbody>
             {/* ---- Row 1: 供应商代码 | 值 | 物料编号 | 值 ---- */}
@@ -135,9 +135,10 @@ const factoryTemplate: LabelTemplate = {
                 style={{
                   ...valueStyle,
                   padding: '3px 6px',
-                  fontSize: 8.5,
+                  fontSize: 8,
                   fontFamily: "'Courier New', monospace",
                   fontWeight: 'bold',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {data.box_number}
@@ -218,8 +219,9 @@ const factoryTemplate: LabelTemplate = {
         <div
           style={{
             borderTop: `2px solid ${bc}`,
-            padding: '8px 10px 6px',
+            padding: '8px 10px 4px',
             textAlign: 'center',
+            position: 'relative',
           }}
         >
           {/* 一维条码模拟 */}
@@ -247,6 +249,27 @@ const factoryTemplate: LabelTemplate = {
           >
             {data.box_number}
           </div>
+
+          {/* 内箱/外箱标识 — 右下角 */}
+          {boxType && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 4,
+                right: 10,
+                fontSize: 10,
+                fontWeight: 900,
+                letterSpacing: 1,
+                color: boxType === 'inner' ? '#d4380d' : '#0958d9',
+                border: `1.5px solid ${boxType === 'inner' ? '#d4380d' : '#0958d9'}`,
+                borderRadius: 3,
+                padding: '1px 6px',
+                background: boxType === 'inner' ? '#fff2e8' : '#e6f4ff',
+              }}
+            >
+              {boxType === 'inner' ? '内箱' : '外箱'}
+            </div>
+          )}
         </div>
       </div>
     );

@@ -31,4 +31,5 @@ export interface TemplateRenderOptions {
   companyLogo?: string;
   departmentName?: string;
   labelWidth?: number;
+  boxType?: string;
 }

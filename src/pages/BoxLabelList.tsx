@@ -64,7 +64,9 @@ export default function BoxLabelList() {
   const handlePrint = async (record: BoxLabel) => {
     const defs = await loadFieldDefinitions(record.box_type);
     setPreviewData({
+      id: record.id,
       box_number: record.box_number,
+      box_type: record.box_type,
       qr_content: record.qr_content || record.box_number,
       displayFields: extractDisplayValues(record, defs),
     });
@@ -105,8 +107,17 @@ export default function BoxLabelList() {
       ),
     },
     ...fieldDefs.slice(0, 5).map((f) => ({
-      title: f.label, key: f.key, width: 120, ellipsis: true,
-      render: (_: any, record: BoxLabel) => record.custom_fields?.[f.key] || <span style={{ color: '#ddd' }}>-</span>,
+      title: f.label, key: f.key, width: 160, ellipsis: true,
+      render: (_: any, record: BoxLabel) => {
+        const val = record.custom_fields?.[f.key];
+        return val ? (
+          <Tooltip title={val}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{val}</span>
+          </Tooltip>
+        ) : (
+          <span style={{ color: '#ddd' }}>-</span>
+        );
+      },
     })),
     {
       title: '状态', dataIndex: 'status', key: 'status', width: 68,

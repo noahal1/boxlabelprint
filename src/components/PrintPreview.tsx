@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Button, Space, message, Segmented, Tooltip } from 'antd';
-import { PrinterOutlined, CloseOutlined } from '@ant-design/icons';
+import { Modal, Button, Space, message } from 'antd';
+import { PrinterOutlined, CloseOutlined, DesktopOutlined } from '@ant-design/icons';
 import QRCode from 'qrcode';
-import { getTemplateById, templates } from '../templates';
+import { getTemplateById } from '../templates';
 import type { LabelData } from '../templates';
 
 interface PrintPreviewProps {
@@ -22,7 +22,6 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     labelWidth: 100,
     labelHeight: 75,
   });
-  const [selectedTemplate, setSelectedTemplate] = useState('factory');
   const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
@@ -31,22 +30,19 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     const load = async () => {
       try {
         if (!window.electronAPI) return;
-        const [tmpl, name, logo, lw, lh] = await Promise.all([
-          window.electronAPI.getSetting('label_template'),
+        const [name, logo, lw, lh] = await Promise.all([
           window.electronAPI.getSetting('company_name'),
           window.electronAPI.getSetting('company_logo'),
           window.electronAPI.getSetting('label_width'),
           window.electronAPI.getSetting('label_height'),
         ]);
-        const tplId = tmpl || 'factory';
         setSettings({
-          templateId: tplId,
+          templateId: 'factory',
           companyName: name || '',
           companyLogo: logo || '',
           labelWidth: Number(lw) || 100,
           labelHeight: Number(lh) || 75,
         });
-        setSelectedTemplate(tplId);
       } catch (err) {
         console.error('加载设置失败:', err);
       } finally {
@@ -73,7 +69,7 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
       (el as HTMLElement).style.border = 'none';
       (el as HTMLElement).style.display = 'block';
     }
-  }, [qrDataUrl, data.box_number, selectedTemplate]);
+  }, [qrDataUrl, data.box_number]);
 
   const handlePrint = async () => {
     try {
@@ -86,8 +82,7 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
         message.warning('请先在系统设置中配置打印机名称');
         return;
       }
-      await window.electronAPI.setSetting('label_template', selectedTemplate);
-      const zpl = generateZPL(data, selectedTemplate);
+      const zpl = generateZPL(data);
       const result = await window.electronAPI.printSend(zpl);
       if (result.success) {
         message.success(`打印指令已发送到 ${result.printerName}`);
@@ -100,7 +95,58 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     }
   };
 
-  const currentTemplate = getTemplateById(selectedTemplate);
+  const handleSystemPrintPreview = async () => {
+    try {
+      if (!window.electronAPI) {
+        message.warning('请在 Electron 环境中使用此功能');
+        return;
+      }
+      if (!containerRef.current) {
+        message.error('预览内容未就绪');
+        return;
+      }
+
+      // 直接从 DOM 中提取已渲染的模板 HTML（含内联样式和 QR 码）
+      const templateHtml = containerRef.current.innerHTML;
+
+      // 包裹成完整的 HTML 文档
+      const fullHtml = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>标签打印 - ${escapeHtml(data.box_number)}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @media print {
+    body { padding: 0; }
+  }
+</style>
+</head>
+<body>
+${templateHtml}
+</body>
+</html>`;
+
+      const result = await window.electronAPI.printSystemPreview(fullHtml);
+      if (result.success) {
+        message.success('系统打印预览已打开');
+      } else {
+        message.error(result.error || '打开打印预览失败');
+      }
+    } catch (err: any) {
+      message.error('系统打印预览失败: ' + (err?.message || '未知错误'));
+    }
+  };
+
+  const factoryTemplate = getTemplateById('factory');
   const renderWidth = settings.labelWidth > 150 ? 420 : settings.labelWidth > 100 ? 380 : 280;
 
   return (
@@ -115,24 +161,34 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
       onCancel={onClose}
       width={580}
       footer={
-        <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
           <Button
-            icon={<CloseOutlined />}
-            onClick={onClose}
+            icon={<DesktopOutlined />}
+            onClick={handleSystemPrintPreview}
+            disabled={loadingSettings || !qrDataUrl}
             style={{ borderRadius: 6, height: 34 }}
           >
-            关闭
+            系统打印预览
           </Button>
-          <Button
-            type="primary"
-            icon={<PrinterOutlined />}
-            onClick={handlePrint}
-            size="large"
-            disabled={loadingSettings}
-            style={{ borderRadius: 8, height: 42, padding: '0 24px', fontWeight: 600 }}
-          >
-            确认打印
-          </Button>
+          <Space>
+            <Button
+              icon={<CloseOutlined />}
+              onClick={onClose}
+              style={{ borderRadius: 6, height: 34 }}
+            >
+              关闭
+            </Button>
+            <Button
+              type="primary"
+              icon={<PrinterOutlined />}
+              onClick={handlePrint}
+              size="large"
+              disabled={loadingSettings}
+              style={{ borderRadius: 8, height: 42, padding: '0 24px', fontWeight: 600 }}
+            >
+              发送到标签打印机
+            </Button>
+          </Space>
         </Space>
       }
       centered
@@ -142,42 +198,6 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
         },
       }}
     >
-      {/* 模板选择器 */}
-      <div
-        style={{
-          marginBottom: 18,
-          textAlign: 'center',
-          padding: '8px 12px',
-          background: '#f3f2f1',
-          borderRadius: 8,
-        }}
-      >
-        <Segmented
-          value={selectedTemplate}
-          onChange={(val) => setSelectedTemplate(val as string)}
-          options={templates.map((t) => ({
-            value: t.id,
-            label: (
-              <Tooltip title={t.description}>
-                <Space size={4}>
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 14,
-                      height: 11,
-                      background: t.thumbnail.color,
-                      border: '1px solid #d2d0ce',
-                      borderRadius: 2,
-                    }}
-                  />
-                  <span>{t.name}</span>
-                </Space>
-              </Tooltip>
-            ),
-          }))}
-        />
-      </div>
-
       {/* 预览区域 — 亚克力卡片 */}
       <div
         style={{
@@ -211,11 +231,12 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
           ref={containerRef}
           style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}
         >
-          {currentTemplate.render(data, {
+          {factoryTemplate.render(data, {
             companyName: settings.companyName,
             companyLogo: settings.companyLogo,
             departmentName: (data as any).department_name || '',
             labelWidth: renderWidth,
+            boxType: (data as any).box_type,
           })}
         </div>
       </div>
@@ -223,39 +244,31 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
   );
 }
 
-function generateZPL(data: LabelData, templateId: string): string {
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function generateZPL(data: LabelData): string {
   const header = '^XA\n^CF0,28\n';
   const footer = '^XZ';
   const qrContent = data.qr_content || data.box_number;
   const firstVal = data.displayFields[0]?.value || '';
   const secondVal = data.displayFields[1]?.value || '';
-  let body = '';
-
-  switch (templateId) {
-    case 'compact':
-      body = [
-        `^FO20,10^FD${data.box_number}^FS`,
-        `^FO20,40^FD${data.displayFields[0]?.label || ''}: ${firstVal}^FS`,
-        `^FO20,60^FD${data.displayFields[1]?.label || ''}: ${secondVal}^FS`,
-        `^FO160,40^BQN,2,6^FDQA,${qrContent}^FS`,
-        `^FO20,130^BY2^BCN,30,Y,N^FD${data.box_number}^FS`,
-      ]
-        .filter(Boolean)
-        .join('\n');
-      break;
-    default:
-      body = [
-        `^CF0,30`,
-        `^FO20,15^FD箱号: ${data.box_number}^FS`,
-        `^FO20,50^FD${data.displayFields[0]?.label || ''}: ${firstVal}^FS`,
-        `^FO20,80^FD${data.displayFields[1]?.label || ''}: ${secondVal}^FS`,
-        `^FO280,15^BQN,2,6^FDQA,${qrContent}^FS`,
-        `^FO20,200^BY2^BCN,40,Y,N^FD${data.box_number}^FS`,
-      ]
-        .filter(Boolean)
-        .join('\n');
-      break;
-  }
+  const body = [
+    `^CF0,30`,
+    `^FO20,15^FD箱号: ${data.box_number}^FS`,
+    `^FO20,50^FD${data.displayFields[0]?.label || ''}: ${firstVal}^FS`,
+    `^FO20,80^FD${data.displayFields[1]?.label || ''}: ${secondVal}^FS`,
+    `^FO280,15^BQN,2,6^FDQA,${qrContent}^FS`,
+    `^FO20,200^BY2^BCN,40,Y,N^FD${data.box_number}^FS`,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   return header + body + '\n' + footer;
 }
