@@ -21,8 +21,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'npm'
-          cache-dependency-path: box-label-printer/package-lock.json
 
       - name: 安装依赖
         run: |

@@ -33,7 +33,7 @@ const factoryTemplate: LabelTemplate = {
   thumbnail: { width: 120, height: 96, color: '#e6f4ff' },
 
   render(data, options) {
-    const { companyName = '', labelWidth = 420 } = options || {};
+    const { companyName = '', departmentName = '', labelWidth = 420 } = options || {};
     const fields = data.displayFields;
 
     // border color
@@ -89,7 +89,7 @@ const factoryTemplate: LabelTemplate = {
             {companyName || '公司名称'}
           </div>
           <div style={{ fontSize: 10, color: '#555', marginTop: 2, letterSpacing: 1 }}>
-            铝箔事业一部
+            {departmentName || '部门名称'}
           </div>
         </div>
 

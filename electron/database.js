@@ -106,6 +106,7 @@ async function initDatabase() {
       insertSetting.run(['company_name', '我的公司']);
       insertSetting.run(['company_logo', '']);
       insertSetting.run(['label_template', 'factory']);
+      insertSetting.run(['department_name', '铝箔事业一部']);
 
       // 插入内箱/外箱字段定义
       const hasInner = db.exec("SELECT value FROM settings WHERE key = 'field_definitions_inner'");
@@ -163,7 +164,11 @@ function getDatabase() {
         },
       };
     },
-    exec: (sql) => { db.run(sql); saveDatabase(); },
+    exec: (sql) => {
+      const result = db.exec(sql);
+      saveDatabase();
+      return result;
+    },
   };
 }
 

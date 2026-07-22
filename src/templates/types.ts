@@ -29,5 +29,6 @@ export interface LabelTemplate {
 export interface TemplateRenderOptions {
   companyName?: string;
   companyLogo?: string;
+  departmentName?: string;
   labelWidth?: number;
 }

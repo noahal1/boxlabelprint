@@ -214,6 +214,7 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
           {currentTemplate.render(data, {
             companyName: settings.companyName,
             companyLogo: settings.companyLogo,
+            departmentName: (data as any).department_name || '',
             labelWidth: renderWidth,
           })}
         </div>

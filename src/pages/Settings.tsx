@@ -24,6 +24,7 @@ type SettingsData = {
   company_name: string;
   company_logo: string;
   label_template: string;
+  department_name: string;
 };
 
 const defaultSettings: SettingsData = {
@@ -33,6 +34,7 @@ const defaultSettings: SettingsData = {
   company_name: '我的公司',
   company_logo: '',
   label_template: 'factory',
+  department_name: '铝箔事业一部',
 };
 
 export default function Settings() {
@@ -64,6 +66,7 @@ export default function Settings() {
         label_height: Number(merged.label_height),
         company_name: merged.company_name,
         label_template: merged.label_template,
+        department_name: merged.department_name,
       });
     } catch (err) {
       console.error('加载设置失败:', err);
@@ -94,6 +97,7 @@ export default function Settings() {
         company_name: values.company_name || '',
         company_logo: logoPreview,
         label_template: values.label_template || 'factory',
+        department_name: values.department_name || '',
       };
       for (const [key, value] of Object.entries(saveData)) {
         await window.electronAPI.setSetting(key, value);
@@ -389,6 +393,9 @@ export default function Settings() {
                   <Form.Item name="company_name" label="公司名称" style={{ marginTop: 8 }}>
                     <Input placeholder="将显示在箱牌标签顶部" maxLength={50} style={{ borderRadius: 6 }} />
                   </Form.Item>
+                  <Form.Item name="department_name" label="部门名称" style={{ marginTop: 4 }}>
+                    <Input placeholder="例：铝箔事业一部" maxLength={50} style={{ borderRadius: 6 }} />
+                  </Form.Item>
                   <Divider style={{ borderColor: '#edebe9' }} />
                   <Button
                     type="primary"
@@ -608,6 +615,9 @@ export default function Settings() {
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>公司名称</span>}>
                 {settings.company_name || <Text style={{ color: '#8a8886' }}>未设置</Text>}
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#605e5c' }}>部门名称</span>}>
+                {settings.department_name || <Text style={{ color: '#8a8886' }}>未设置</Text>}
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>默认模板</span>}>
                 {templates.find((t) => t.id === settings.label_template)?.name || '标准模板'}

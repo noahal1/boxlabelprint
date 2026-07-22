@@ -24,6 +24,7 @@ export default function BoxLabelForm() {
   const [fieldsReady, setFieldsReady] = useState(false);
   const [boxNumber, setBoxNumber] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [departmentName, setDepartmentName] = useState('');
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
 
@@ -50,8 +51,20 @@ export default function BoxLabelForm() {
     }
   };
 
+  const loadDepartmentName = async () => {
+    try {
+      if (window.electronAPI) {
+        const name = await window.electronAPI.getSetting('department_name');
+        if (name) setDepartmentName(name);
+      }
+    } catch {}
+  };
+
   useEffect(() => {
-    if (fieldsReady) generateBoxNumber();
+    if (fieldsReady) {
+      generateBoxNumber();
+      loadDepartmentName();
+    }
   }, [fieldsReady, boxType]);
 
   const handleSubmit = async (values: any) => {
@@ -79,6 +92,7 @@ export default function BoxLabelForm() {
       setPreviewData({
         box_number: boxNumber,
         qr_content: boxNumber,
+        department_name: departmentName,
         displayFields: fieldDefs.map((f) => ({
           key: f.key,
           label: f.label,
@@ -251,6 +265,33 @@ export default function BoxLabelForm() {
                 自动生成
               </Text>
             </Space>
+          </div>
+
+          {/* ---- 部门名称 ---- */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 16,
+              alignItems: 'flex-end',
+              background: 'linear-gradient(135deg, #f0f6fc 0%, #e6f2fb 100%)',
+              borderRadius: 10,
+              padding: '14px 20px',
+              marginBottom: 14,
+              border: '1px solid rgba(255,255,255,0.8)',
+            }}
+          >
+            <Form.Item
+              label={<span style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1f' }}>部门名称</span>}
+              style={{ marginBottom: 0, flex: 1 }}
+            >
+              <Input
+                value={departmentName}
+                onChange={(e) => setDepartmentName(e.target.value)}
+                placeholder="例：铝箔事业一部"
+                maxLength={50}
+                style={{ borderRadius: 6 }}
+              />
+            </Form.Item>
           </div>
 
           <Divider style={{ margin: '16px 0', borderColor: '#edebe9' }} />
