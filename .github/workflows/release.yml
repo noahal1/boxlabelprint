@@ -22,15 +22,14 @@ jobs:
         with:
           node-version: 22
 
-      - name: 安装依赖
-        working-directory: .
-        run: |
-          npm ci
-
       - name: 设置 Electron 镜像（中国加速）
         shell: pwsh
         run: |
           echo "ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/" >> $env:GITHUB_ENV
+
+      - name: 安装依赖
+        run: |
+          npm ci --ignore-scripts
 
       - name: 构建并发布
         env:
