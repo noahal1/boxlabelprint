@@ -52,6 +52,7 @@
     "directories": {
       "output": "release"
     },
+    "icon": "public/icon_512.png",
     "files": [
       "dist/**/*",
       "electron/**/*",
@@ -70,7 +71,9 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "language": "2052"
+      "language": "2052",
+      "differentialPackage": true,
+      "deleteAppDataOnUninstall": false
     }
   }
 }

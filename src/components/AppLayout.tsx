@@ -41,7 +41,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [isMaximized, setIsMaximized] = useState(false);
   const currentKey = location.pathname.replace('/', '') || 'dashboard';
 
-  // 检查窗口是否最大化
   const checkMaximized = useCallback(async () => {
     try {
       const max = await window.electronAPI.windowIsMaximized();
@@ -55,45 +54,62 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return () => window.removeEventListener('resize', checkMaximized);
   }, [checkMaximized]);
 
-  // 窗口控制
   const handleMinimize = () => window.electronAPI.windowMinimize();
   const handleMaximize = () => window.electronAPI.windowMaximize().then(checkMaximized);
   const handleClose = () => window.electronAPI.windowClose();
 
   return (
     <>
-      {/* ========== 自定义标题栏 ========== */}
+      {/* ==============================================================
+          Fluent 2 标题栏 — 亚克力质感
+          ============================================================== */}
       <div
         onDoubleClick={handleMaximize}
         style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0,
+          position: 'fixed' as const,
+          top: 0,
+          left: 0,
+          right: 0,
           height: TITLE_BAR_HEIGHT,
           zIndex: 1000,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: '#001529',
-          userSelect: 'none',
+          display: 'flex' as const,
+          alignItems: 'center' as const,
+          justifyContent: 'space-between' as const,
+          background: '#1b1a1e',
+          userSelect: 'none' as const,
           WebkitAppRegion: 'drag',
-        }}
+        } as any}
       >
-        {/* 左侧：应用信息 */}
         <Space size={8} style={{ paddingLeft: 16 }}>
-          <PrinterOutlined style={{ color: '#69b1ff', fontSize: 15 }} />
-          <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: 600, letterSpacing: 0.5 }}>
+          <PrinterOutlined style={{ color: '#60cdff', fontSize: 14 }} />
+          <span
+            style={{
+              color: 'rgba(255,255,255,0.9)',
+              fontSize: 12.5,
+              fontWeight: 600,
+              letterSpacing: 0.3,
+            }}
+          >
             箱牌打印管理系统
           </span>
-          <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 11 }}>v{pkg.version}</span>
+          <span
+            style={{
+              color: 'rgba(255,255,255,0.25)',
+              fontSize: 10.5,
+              padding: '0 4px',
+            }}
+          >
+            v{pkg.version}
+          </span>
         </Space>
 
-        {/* 右侧：窗口控制按钮 */}
+        {/* 窗口控制 */}
         <div
           style={{
-            display: 'flex',
+            display: 'flex' as const,
             height: '100%',
             WebkitAppRegion: 'no-drag',
-          }}
+          } as any}
         >
           <WindowControlButton onClick={handleMinimize} icon={<MinusOutlined />} />
           <WindowControlButton
@@ -110,9 +126,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
 
-      {/* ========== 主布局 ========== */}
+      {/* ==============================================================
+          Fluent 2 主布局
+          ============================================================== */}
       <Layout style={{ height: '100vh', paddingTop: TITLE_BAR_HEIGHT }}>
-        {/* 侧边栏 */}
+        {/* ---- 侧边栏 (Acrylic Dark) ---- */}
         <Sider
           collapsible
           collapsed={collapsed}
@@ -128,126 +146,197 @@ export default function AppLayout({ children }: AppLayoutProps) {
             top: TITLE_BAR_HEIGHT,
             bottom: 0,
             zIndex: 100,
-            background: 'linear-gradient(180deg, #001529 0%, #002140 50%, #001529 100%)',
+            background: '#1b1a1e',
+            borderRight: '1px solid rgba(255,255,255,0.04)',
           }}
         >
-          {/* Logo 区域（可拖动） */}
+          {/* 侧边栏品牌区 */}
           <div
             style={{
-              height: 60,
+              padding: '20px 18px 12px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: collapsed ? 0 : 10,
-              borderBottom: '1px solid rgba(255,255,255,0.06)',
-              padding: collapsed ? '0 8px' : '0 20px',
-              WebkitAppRegion: 'drag',
+              gap: 10,
+              borderBottom: '1px solid rgba(255,255,255,0.04)',
+              marginBottom: 4,
             }}
           >
-            <div style={{
-              width: 32, height: 32,
-              background: 'linear-gradient(135deg, #1677ff, #69b1ff)',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}>
-              <PrinterOutlined style={{ fontSize: 16, color: '#fff' }} />
+            <div
+              style={{
+                width: collapsed ? 32 : 34,
+                height: collapsed ? 32 : 34,
+                background: 'linear-gradient(135deg, #0078d4, #60cdff)',
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1)',
+              }}
+            >
+              <PrinterOutlined style={{ color: '#fff', fontSize: collapsed ? 14 : 16 }} />
             </div>
             {!collapsed && (
-              <div style={{ textAlign: 'left' }}>
-                <div style={{ color: '#fff', fontSize: 14, fontWeight: 600, lineHeight: 1.3, letterSpacing: 0.5 }}>
-                  箱牌打印系统
+              <div style={{ overflow: 'hidden' }}>
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.9)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    lineHeight: 1.2,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  箱牌打印
                 </div>
-                <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, marginTop: 1 }}>
-                  {isMaximized ? '已最大化' : '窗口模式'}
+                <div
+                  style={{
+                    color: 'rgba(255,255,255,0.3)',
+                    fontSize: 10.5,
+                    lineHeight: 1.3,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Box Label Manager
                 </div>
               </div>
             )}
           </div>
 
           {/* 菜单 */}
-          <div style={{ padding: '8px 0' }}>
+          <div style={{ padding: '4px 0', flex: 1 }}>
             <Menu
               theme="dark"
               mode="inline"
               selectedKeys={[currentKey]}
               items={menuItems}
               onClick={({ key }) => navigate(`/${key}`)}
-              style={{ background: 'transparent', borderRight: 0 }}
+              style={{
+                background: 'transparent',
+                borderRight: 0,
+              }}
             />
           </div>
 
-          {/* 折叠按钮 */}
-          <div style={{
-            position: 'absolute', bottom: 16, left: 0, right: 0,
-            display: 'flex', justifyContent: 'center',
-          }}>
+          {/* 侧边栏底部 */}
+          <div
+            style={{
+              padding: '12px 16px',
+              borderTop: '1px solid rgba(255,255,255,0.04)',
+            }}
+          >
+            {/* 折叠按钮 */}
             <div
               onClick={() => setCollapsed(!collapsed)}
               style={{
-                width: 32, height: 32,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 8, cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: collapsed ? 'center' : 'flex-start',
+                gap: 8,
+                padding: '6px 8px',
+                borderRadius: 6,
+                cursor: 'pointer',
                 color: 'rgba(255,255,255,0.35)',
-                transition: 'all 0.2s',
+                fontSize: 12,
+                transition: 'all 0.15s cubic-bezier(0.1, 0.9, 0.2, 1)',
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.06)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                e.currentTarget.style.color = 'rgba(255,255,255,0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'rgba(255,255,255,0.35)';
+              }}
             >
               {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              {!collapsed && <span>折叠侧栏</span>}
             </div>
           </div>
         </Sider>
 
-        {/* 主内容区 */}
-        <Layout style={{
-          marginLeft: collapsed ? 80 : 240,
-          transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}>
-          {/* 顶栏 */}
-          <Header style={{
-            padding: '0 28px',
-            background: '#fff',
-            borderBottom: '1px solid #f0f0f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            height: HEADER_HEIGHT,
-            position: 'sticky',
-            top: 0,
-            zIndex: 50,
-          }}>
+        {/* ---- 主内容区 ---- */}
+        <Layout
+          style={{
+            marginLeft: collapsed ? 80 : 240,
+            transition: 'margin-left 0.25s cubic-bezier(0.1, 0.9, 0.2, 1)',
+          }}
+        >
+          {/* ---- Fluent 2 顶部栏 ---- */}
+          <Header
+            style={{
+              padding: '0 28px',
+              height: HEADER_HEIGHT,
+              background: 'rgba(255,255,255,0.72)',
+              backdropFilter: 'blur(20px) saturate(1.2)',
+              WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
+              borderBottom: '1px solid #edebe9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              position: 'sticky',
+              top: 0,
+              zIndex: 50,
+              lineHeight: `${HEADER_HEIGHT}px`,
+            }}
+          >
             <Space>
-              <Text style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f', letterSpacing: 0.3 }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: '#1a1a1f',
+                  letterSpacing: 0.2,
+                }}
+              >
                 {menuItems.find((item) => item.key === currentKey)?.label || '箱牌打印管理系统'}
               </Text>
             </Space>
-            <Space size={16}>
+
+            <Space size={14}>
               <UpdateNotification />
-              <div style={{ width: 1, height: 18, background: '#f0f0f0' }} />
-              <div style={{
-                width: 26, height: 26,
-                background: 'linear-gradient(135deg, #1677ff, #69b1ff)',
-                borderRadius: 6,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ color: '#fff', fontSize: 11, fontWeight: 700 }}>箱</span>
+              {/* 用户头像 */}
+              <div
+                style={{
+                  width: 1,
+                  height: 18,
+                  background: '#edebe9',
+                }}
+              />
+              <div
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 6,
+                  background: 'linear-gradient(135deg, #0078d4, #60cdff)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'default',
+                  transition: 'transform 0.15s cubic-bezier(0.1, 0.9, 0.2, 1)',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                <span style={{ color: '#fff', fontSize: 12, fontWeight: 700 }}>箱</span>
               </div>
             </Space>
           </Header>
 
-          {/* 页面内容 */}
-          <Content style={{
-            padding: 24,
-            overflow: 'auto',
-            height: `calc(100vh - ${TITLE_BAR_HEIGHT + HEADER_HEIGHT}px)`,
-            background: '#f0f2f5',
-          }}>
-            <div className="page-enter">
-              {children}
-            </div>
+          {/* ---- 页面内容 ---- */}
+          <Content
+            style={{
+              padding: 24,
+              overflow: 'auto',
+              height: `calc(100vh - ${TITLE_BAR_HEIGHT + HEADER_HEIGHT}px)`,
+              background: '#f0f2f5',
+            }}
+          >
+            <div className="page-enter">{children}</div>
           </Content>
         </Layout>
       </Layout>
@@ -255,7 +344,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   );
 }
 
-/* ========== 窗口控制按钮 ========== */
+/* ==============================================================
+   Fluent 2 窗口控制按钮
+   ============================================================== */
 
 interface WindowControlButtonProps {
   onClick: () => void;
@@ -279,10 +370,18 @@ function WindowControlButton({ onClick, icon, danger, tooltip }: WindowControlBu
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        color: hovered ? (danger ? '#fff' : 'rgba(255,255,255,0.85)') : 'rgba(255,255,255,0.5)',
-        background: hovered ? (danger ? '#e81123' : 'rgba(255,255,255,0.1)') : 'transparent',
+        color: hovered
+          ? danger
+            ? '#fff'
+            : 'rgba(255,255,255,0.9)'
+          : 'rgba(255,255,255,0.4)',
+        background: hovered
+          ? danger
+            ? '#d13438'
+            : 'rgba(255,255,255,0.08)'
+          : 'transparent',
         transition: 'all 0.15s ease',
-        fontSize: 12,
+        fontSize: 11,
       }}
     >
       {icon}

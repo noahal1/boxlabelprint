@@ -68,9 +68,9 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     const containerId = `qr-container-${data.box_number}`;
     const el = containerRef.current.querySelector(`#${containerId}`);
     if (el) {
-      el.innerHTML = `<img src="${qrDataUrl}" alt="QR" style="width:100%;height:100%;object-fit:contain;display:block;" />`;
-      el.style.border = 'none';
-      el.style.display = 'block';
+      (el as HTMLElement).innerHTML = `<img src="${qrDataUrl}" alt="QR" style="width:100%;height:100%;object-fit:contain;display:block;" />`;
+      (el as HTMLElement).style.border = 'none';
+      (el as HTMLElement).style.display = 'block';
     }
   }, [qrDataUrl, data.box_number, selectedTemplate]);
 

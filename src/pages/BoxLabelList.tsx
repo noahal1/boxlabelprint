@@ -13,13 +13,12 @@ import PrintPreview from '../components/PrintPreview';
 
 const { Text } = Typography;
 
-// 统计卡片统一风格
-const STAT_COLORS: Record<string, { bg: string; iconBg: string; color: string }> = {
-  all:     { bg: 'linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)', iconBg: '#1677ff', color: '#1677ff' },
-  inner:   { bg: 'linear-gradient(135deg, #e6f4ff 0%, #e0efff 100%)', iconBg: '#1677ff', color: '#1677ff' },
-  outer:   { bg: 'linear-gradient(135deg, #f9f0ff 0%, #f0e0ff 100%)', iconBg: '#722ed1', color: '#722ed1' },
-  printed: { bg: 'linear-gradient(135deg, #f6ffed 0%, #e8f8e0 100%)', iconBg: '#52c41a', color: '#52c41a' },
-  pending: { bg: 'linear-gradient(135deg, #fffbe6 0%, #fff7cc 100%)', iconBg: '#faad14', color: '#faad14' },
+const STAT_STYLES: Record<string, { gradient: string; icon: string; accent: string }> = {
+  all:     { gradient: 'linear-gradient(135deg, #deecf9 0%, #f0f6fc 100%)', icon: '#0078d4', accent: '#0078d4' },
+  inner:   { gradient: 'linear-gradient(135deg, #e0f2ff 0%, #ecf7ff 100%)', icon: '#0078d4', accent: '#0078d4' },
+  outer:   { gradient: 'linear-gradient(135deg, #f0e6ff 0%, #f5f0ff 100%)', icon: '#8764b8', accent: '#8764b8' },
+  printed: { gradient: 'linear-gradient(135deg, #dff6dd 0%, #ecf9eb 100%)', icon: '#107c10', accent: '#107c10' },
+  pending: { gradient: 'linear-gradient(135deg, #fff4ce 0%, #fff9e6 100%)', icon: '#ff8c00', accent: '#ff8c00' },
 };
 
 export default function BoxLabelList() {
@@ -46,21 +45,35 @@ export default function BoxLabelList() {
       let labels = await window.electronAPI.getBoxLabels({ keyword: keyword || undefined, status: statusFilter });
       if (typeFilter) labels = labels.filter((l) => l.box_type === typeFilter);
       setData(labels);
-    } catch { message.error('加载数据失败'); }
-    finally { setLoading(false); }
+    } catch {
+      message.error('加载数据失败');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => { loadData(); }, [statusFilter, typeFilter]);
+  useEffect(() => {
+    loadData();
+  }, [statusFilter, typeFilter]);
 
   const handleSearch = () => loadData();
   const handleDelete = async (id: number) => {
-    try { if (window.electronAPI) { await window.electronAPI.deleteBoxLabel(id); message.success('删除成功'); loadData(); } } catch { message.error('删除失败'); }
+    try {
+      if (window.electronAPI) {
+        await window.electronAPI.deleteBoxLabel(id);
+        message.success('删除成功');
+        loadData();
+      }
+    } catch {
+      message.error('删除失败');
+    }
   };
 
   const handlePrint = async (record: BoxLabel) => {
     const defs = await loadFieldDefinitions(record.box_type);
     setPreviewData({
-      box_number: record.box_number, qr_content: record.qr_content || record.box_number,
+      box_number: record.box_number,
+      qr_content: record.qr_content || record.box_number,
       displayFields: extractDisplayValues(record, defs),
     });
     setPreviewVisible(true);
@@ -70,11 +83,16 @@ export default function BoxLabelList() {
     try {
       if (!window.electronAPI) return;
       const printerName = await window.electronAPI.getSetting('printer_name');
-      if (!printerName) { message.warning('请先配置打印机'); return; }
+      if (!printerName) {
+        message.warning('请先配置打印机');
+        return;
+      }
       await window.electronAPI.markPrinted(record.id, printerName);
       message.success(`箱牌 ${record.box_number} 打印完成`);
       loadData();
-    } catch (err: any) { message.error('打印失败: ' + (err?.message || '')); }
+    } catch (err: any) {
+      message.error('打印失败: ' + (err?.message || ''));
+    }
   };
 
   const statItems = [
@@ -89,7 +107,7 @@ export default function BoxLabelList() {
     {
       title: '箱号', dataIndex: 'box_number', key: 'box_number', width: 140, fixed: 'left',
       render: (val: string) => (
-        <Text code strong style={{ fontSize: 13, color: '#1677ff', background: '#e6f4ff', border: 'none', padding: '2px 6px', borderRadius: 4 }}>
+        <Text code strong style={{ fontSize: 13, color: '#0078d4', background: '#deecf9', border: 'none', padding: '2px 8px', borderRadius: 4 }}>
           {val}
         </Text>
       ),
@@ -108,15 +126,20 @@ export default function BoxLabelList() {
     })),
     {
       title: '状态', dataIndex: 'status', key: 'status', width: 68,
-      render: (s: string) => s === 'printed'
-        ? <Tag color="success" style={{ borderRadius: 4, margin: 0 }}>已打印</Tag>
-        : <Tag color="warning" style={{ borderRadius: 4, margin: 0, animation: 'pulseGlow 2s infinite' }}>待打印</Tag>,
+      render: (s: string) =>
+        s === 'printed' ? (
+          <Tag color="success" style={{ borderRadius: 4, margin: 0 }}>已打印</Tag>
+        ) : (
+          <Tag color="warning" className="fluent-pulse" style={{ borderRadius: 4, margin: 0 }}>待打印</Tag>
+        ),
     },
-    { title: '打印', dataIndex: 'print_count', key: 'print_count', width: 48, align: 'center' as const,
-      render: (v: number) => <Text style={{ color: v > 0 ? '#52c41a' : '#ccc', fontWeight: 600 }}>{v || 0}</Text>,
+    {
+      title: '打印', dataIndex: 'print_count', key: 'print_count', width: 48, align: 'center' as const,
+      render: (v: number) => <Text style={{ color: v > 0 ? '#107c10' : '#ccc', fontWeight: 600 }}>{v || 0}</Text>,
     },
-    { title: '创建时间', dataIndex: 'created_at', key: 'created_at', width: 148,
-      render: (val: string) => <span style={{ color: '#666', fontSize: 12 }}>{val}</span>,
+    {
+      title: '创建时间', dataIndex: 'created_at', key: 'created_at', width: 148,
+      render: (val: string) => <span style={{ color: '#605e5c', fontSize: 12 }}>{val}</span>,
     },
     {
       title: '操作', key: 'action', width: 150, fixed: 'right',
@@ -146,33 +169,28 @@ export default function BoxLabelList() {
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto' }}>
-      {/* ====== 统计卡片 ====== */}
-      <Row gutter={[14, 14]} style={{ marginBottom: 14 }} justify="center">
+      {/* ====== Fluent 2 统计卡片 ====== */}
+      <Row gutter={[14, 14]} style={{ marginBottom: 14 }}>
         {statItems.map((s) => {
-          const c = STAT_COLORS[s.key];
+          const c = STAT_STYLES[s.key];
           return (
             <Col span={4} key={s.key}>
-              <div className="hover-card" style={{
-                background: c.bg,
+              <div className="hover-lift" style={{
+                background: c.gradient,
                 borderRadius: 14,
                 padding: '16px 14px',
-                transition: 'all 0.25s ease',
-                border: '1px solid rgba(0,0,0,0.03)',
+                border: '1px solid rgba(255,255,255,0.6)',
+                cursor: 'default',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                   <div>
-                    <div style={{ fontSize: 12, color: '#666', marginBottom: 2, fontWeight: 500 }}>{s.title}</div>
-                    <div style={{ fontSize: 24, fontWeight: 700, color: c.color, lineHeight: 1.2 }}>{s.value}</div>
+                    <div style={{ fontSize: 11.5, color: '#605e5c', marginBottom: 2, fontWeight: 500 }}>{s.title}</div>
+                    <div className="fluent-stat" style={{ color: c.accent, fontSize: 24 }}>{s.value}</div>
                   </div>
                   <div style={{
-                    width: 34, height: 34,
-                    background: c.iconBg,
-                    borderRadius: 10,
+                    width: 34, height: 34, background: c.icon, borderRadius: 10,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexShrink: 0,
-                    opacity: 0.15,
-                    fontSize: 18,
-                    color: '#fff',
+                    flexShrink: 0, opacity: 0.12, fontSize: 18, color: '#fff',
                   }}>
                     {s.icon}
                   </div>
@@ -183,55 +201,94 @@ export default function BoxLabelList() {
         })}
       </Row>
 
-      {/* ====== 操作栏 ====== */}
-      <Card bodyStyle={{ padding: '14px 18px' }} style={{ marginBottom: 14, borderRadius: 12, border: '1px solid #f0f0f0' }}>
+      {/* ====== Fluent 2 操作栏 ====== */}
+      <div className="fluent-card" style={{ padding: '14px 18px', marginBottom: 14 }}>
         <Space wrap size={10}>
-          <Input placeholder="搜索箱号/字段内容" prefix={<SearchOutlined />} value={keyword}
-            onChange={e => setKeyword(e.target.value)} onPressEnter={handleSearch}
-            style={{ width: 240, borderRadius: 8 }} allowClear />
-          <Select placeholder="箱型" value={typeFilter} onChange={setTypeFilter} allowClear style={{ width: 90, borderRadius: 8 }}
-            options={[{ value: 'inner', label: '内箱' }, { value: 'outer', label: '外箱' }]} />
-          <Select placeholder="状态" value={statusFilter} onChange={setStatusFilter} allowClear style={{ width: 90, borderRadius: 8 }}
-            options={[{ value: 'pending', label: '待打印' }, { value: 'printed', label: '已打印' }]} />
-          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} style={{ borderRadius: 8, height: 34 }}>搜索</Button>
-          <Button icon={<ReloadOutlined />} onClick={loadData} style={{ borderRadius: 8, height: 34 }}>刷新</Button>
+          <Input
+            placeholder="搜索箱号/字段内容"
+            prefix={<SearchOutlined />}
+            value={keyword}
+            onChange={e => setKeyword(e.target.value)}
+            onPressEnter={handleSearch}
+            style={{ width: 240, borderRadius: 6 }}
+            allowClear
+          />
+          <Select
+            placeholder="箱型"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            allowClear
+            style={{ width: 90, borderRadius: 6 }}
+            options={[{ value: 'inner', label: '内箱' }, { value: 'outer', label: '外箱' }]}
+          />
+          <Select
+            placeholder="状态"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            allowClear
+            style={{ width: 90, borderRadius: 6 }}
+            options={[{ value: 'pending', label: '待打印' }, { value: 'printed', label: '已打印' }]}
+          />
+          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch} style={{ borderRadius: 6, height: 32 }}>
+            搜索
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={loadData} style={{ borderRadius: 6, height: 32 }}>
+            刷新
+          </Button>
           {selectedRowKeys.length > 0 && (
             <Popconfirm title={`确认删除 ${selectedRowKeys.length} 个？`} onConfirm={async () => {
               if (window.electronAPI) {
                 for (const id of selectedRowKeys) await window.electronAPI.deleteBoxLabel(id as number);
-                message.success(`已删除 ${selectedRowKeys.length} 个`); setSelectedRowKeys([]); loadData();
+                message.success(`已删除 ${selectedRowKeys.length} 个`);
+                setSelectedRowKeys([]);
+                loadData();
               }
             }}>
-              <Button danger icon={<DeleteOutlined />} style={{ borderRadius: 8 }}>批量删除 ({selectedRowKeys.length})</Button>
+              <Button danger icon={<DeleteOutlined />} style={{ borderRadius: 6 }}>
+                批量删除 ({selectedRowKeys.length})
+              </Button>
             </Popconfirm>
           )}
         </Space>
-      </Card>
+      </div>
 
-      {/* ====== 表格 ====== */}
-      <Card bodyStyle={{ padding: 0 }} style={{ borderRadius: 12, border: '1px solid #f0f0f0', overflow: 'hidden' }}>
-        <Table dataSource={data} columns={columns} rowKey="id" loading={loading}
+      {/* ====== Fluent 2 表格 ====== */}
+      <div className="fluent-card" style={{ padding: 0, overflow: 'hidden' }}>
+        <Table
+          dataSource={data}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
           scroll={{ x: fieldDefs.length * 100 + 700 }}
-          rowSelection={{ selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys) }}
+          rowSelection={{
+            selectedRowKeys,
+            onChange: (keys) => setSelectedRowKeys(keys),
+          }}
           size="middle"
           pagination={{
-            pageSize: 20, showSizeChanger: true,
+            pageSize: 20,
+            showSizeChanger: true,
             showTotal: (t) => `共 ${t} 条`,
             style: { marginRight: 8 },
           }}
           components={{
             header: {
               cell: (props: any) => (
-                <th {...props} style={{ ...props?.style, background: '#fafafa', color: '#666', fontWeight: 600, fontSize: 12 }} />
+                <th {...props} style={{ ...props?.style, background: '#faf9f8', color: '#605e5c', fontWeight: 600, fontSize: 12 }} />
               ),
             },
           }}
           onRow={() => ({
             style: { transition: 'background 0.15s' },
-            onMouseEnter: (e) => { if (e?.currentTarget) e.currentTarget.style.background = '#fafafa'; },
-            onMouseLeave: (e) => { if (e?.currentTarget) e.currentTarget.style.background = ''; },
-          })} />
-      </Card>
+            onMouseEnter: (e: any) => {
+              if (e?.currentTarget) e.currentTarget.style.background = '#f0f6fc';
+            },
+            onMouseLeave: (e: any) => {
+              if (e?.currentTarget) e.currentTarget.style.background = '';
+            },
+          })}
+        />
+      </div>
 
       {/* ====== 打印预览 ====== */}
       {previewData && (
@@ -250,19 +307,27 @@ export default function BoxLabelList() {
         onCancel={() => setLogsVisible(false)}
         footer={null}
         width={600}
-        style={{ borderRadius: 12 }}
         destroyOnClose
       >
         {printLogs.length > 0 ? (
-          <Table dataSource={printLogs} columns={[
-            { title: '打印机', dataIndex: 'printer_name', key: 'printer_name' },
-            { title: '时间', dataIndex: 'printed_at', key: 'printed_at' },
-            { title: '状态', dataIndex: 'status', key: 'status', render: (s: string) =>
-              s === 'success' ? <Tag color="success">成功</Tag> : <Tag color="error">失败</Tag> },
-          ]} rowKey="id" pagination={false} size="small" />
+          <Table
+            dataSource={printLogs}
+            columns={[
+              { title: '打印机', dataIndex: 'printer_name', key: 'printer_name' },
+              { title: '时间', dataIndex: 'printed_at', key: 'printed_at' },
+              {
+                title: '状态', dataIndex: 'status', key: 'status',
+                render: (s: string) =>
+                  s === 'success' ? <Tag color="success">成功</Tag> : <Tag color="error">失败</Tag>,
+              },
+            ]}
+            rowKey="id"
+            pagination={false}
+            size="small"
+          />
         ) : (
-          <div style={{ textAlign: 'center', padding: 32, color: '#999' }}>
-            <FileTextOutlined style={{ fontSize: 32, color: '#ddd', marginBottom: 8 }} />
+          <div style={{ textAlign: 'center', padding: 32, color: '#8a8886' }}>
+            <FileTextOutlined style={{ fontSize: 32, color: '#c8c6c4', marginBottom: 8 }} />
             <div>暂无打印记录</div>
           </div>
         )}

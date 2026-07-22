@@ -1,109 +1,310 @@
+/* =============================================================
+   Fluent 2 Design System — 箱牌打印管理系统
+   Windows 11 亚克力美学 · 柔和渐变 · 系统级质感
+   ============================================================= */
+
 :root {
-  --primary: #1677ff;
-  --primary-light: #e6f4ff;
-  --primary-dark: #0958d9;
-  --success: #52c41a;
-  --warning: #faad14;
-  --error: #ff4d4f;
-  --text: #1f1f1f;
-  --text-secondary: #666;
-  --text-tertiary: #999;
-  --bg: #f0f2f5;
-  --bg-card: #ffffff;
-  --border: #e8e8e8;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --radius: 8px;
-  --radius-sm: 4px;
-  --transition: all 0.2s ease;
+  /* ---- Fluent 2 Color Palette ---- */
+  --fluent-primary: #0078d4;
+  --fluent-primary-hover: #106ebe;
+  --fluent-primary-pressed: #005a9e;
+  --fluent-primary-light: #deecf9;
+  --fluent-primary-lighter: #e6f2fb;
+  --fluent-primary-tint: #f0f6fc;
+
+  --fluent-accent: #0078d4;
+  --fluent-success: #107c10;
+  --fluent-success-bg: #dff6dd;
+  --fluent-warning: #ff8c00;
+  --fluent-warning-bg: #fff4ce;
+  --fluent-error: #d13438;
+  --fluent-error-bg: #fde7e9;
+
+  /* ---- Neutral ---- */
+  --fluent-text-primary: #1a1a1f;
+  --fluent-text-secondary: #605e5c;
+  --fluent-text-tertiary: #8a8886;
+  --fluent-text-disabled: #c8c6c4;
+
+  --fluent-bg-page: #f0f2f5;
+  --fluent-bg-card: rgba(255, 255, 255, 0.85);
+  --fluent-bg-elevated: #ffffff;
+  --fluent-bg-subtle: #faf9f8;
+  --fluent-bg-hover: #f3f2f1;
+
+  --fluent-border: #edebe9;
+  --fluent-border-hover: #d2d0ce;
+  --fluent-border-card: rgba(0, 0, 0, 0.04);
+
+  /* ---- Acrylic Glass ---- */
+  --acrylic-bg: rgba(255, 255, 255, 0.72);
+  --acrylic-blur: 24px;
+  --acrylic-saturation: 1.2;
+  --acrylic-border: rgba(255, 255, 255, 0.6);
+  --acrylic-highlight: rgba(255, 255, 255, 0.9);
+  --acrylic-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(0, 0, 0, 0.06);
+
+  /* ---- Shadows ---- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.06), 0 8px 32px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.08), 0 16px 48px rgba(0, 0, 0, 0.06);
+
+  /* ---- Radii ---- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  /* ---- Transitions ---- */
+  --ease-fluent: cubic-bezier(0.1, 0.9, 0.2, 1);
+  --ease-fluent-out: cubic-bezier(0, 0, 0, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* ---- Reset ---- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-html, body, #root { height: 100%; }
+html,
+body,
+#root {
+  height: 100%;
+}
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Segoe UI Variable', 'Segoe UI', -apple-system, BlinkMacSystemFont,
+    'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
+  background: var(--fluent-bg-page);
+  color: var(--fluent-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #d9d9d9; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #bfbfbf; }
-
-/* Card hover effect */
-.hover-card {
-  transition: var(--transition);
-  cursor: pointer;
+/* ---- Scrollbar (Fluent 2 style) ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-.hover-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c8c6c4;
+  border-radius: 3px;
+  transition: background var(--duration-fast) var(--ease-fluent);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a09f9e;
 }
 
-/* Stat card with gradient icon */
-.stat-card {
+/* =============================================================
+   Fluent 2 Components
+   ============================================================= */
+
+/* ---- Acrylic Card ---- */
+.fluent-card {
+  background: var(--acrylic-bg);
+  backdrop-filter: blur(var(--acrylic-blur)) saturate(var(--acrylic-saturation));
+  -webkit-backdrop-filter: blur(var(--acrylic-blur)) saturate(var(--acrylic-saturation));
+  border: 1px solid var(--acrylic-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--acrylic-shadow);
+  transition: all var(--duration-normal) var(--ease-fluent);
   position: relative;
   overflow: hidden;
-  border-radius: var(--radius) !important;
-  transition: var(--transition);
 }
-.stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-.stat-card .stat-icon-bg {
+
+.fluent-card::before {
+  content: '';
   position: absolute;
-  right: -10px;
-  bottom: -10px;
-  font-size: 64px;
-  opacity: 0.08;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
   pointer-events: none;
 }
 
-/* Animated number */
-@keyframes countUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-count { animation: countUp 0.4s ease-out; }
-
-/* Page enter animation */
-@keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.page-enter { animation: fadeSlideIn 0.3s ease-out; }
-
-/* Glass effect */
-.glass {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+.fluent-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
 }
 
-/* Tag glow pulse */
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 173, 20, 0.3); }
-  50% { box-shadow: 0 0 0 6px rgba(250, 173, 20, 0); }
+/* ---- Acrylic Card (Elevated) ---- */
+.fluent-card-elevated {
+  background: var(--fluent-bg-elevated);
+  border: 1px solid var(--fluent-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-normal) var(--ease-fluent);
 }
-.pulse-glow { animation: pulseGlow 2s infinite; }
 
-/* Status dot */
-.status-dot {
+.fluent-card-elevated:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ---- Hover Lift (通用悬停上浮) ---- */
+.hover-lift {
+  transition: all var(--duration-normal) var(--ease-fluent);
+  cursor: pointer;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ---- Stat Number ---- */
+.fluent-stat {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+
+/* ---- Section Title ---- */
+.fluent-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fluent-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fluent-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 18px;
+  background: linear-gradient(180deg, var(--fluent-primary), #60cdff);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ---- Status Dot ---- */
+.fluent-dot {
   display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
   margin-right: 6px;
+  flex-shrink: 0;
 }
-.status-dot.success { background: var(--success); }
-.status-dot.warning { background: var(--warning); }
-.status-dot.error { background: var(--error); }
+.fluent-dot.success {
+  background: var(--fluent-success);
+  box-shadow: 0 0 0 2px var(--fluent-success-bg);
+}
+.fluent-dot.warning {
+  background: var(--fluent-warning);
+  box-shadow: 0 0 0 2px var(--fluent-warning-bg);
+}
+.fluent-dot.error {
+  background: var(--fluent-error);
+  box-shadow: 0 0 0 2px var(--fluent-error-bg);
+}
+
+/* ---- Data Row (分隔行) ---- */
+.fluent-data-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--fluent-border);
+}
+.fluent-data-row:last-child {
+  border-bottom: none;
+}
+
+/* ---- Mini Progress Bar ---- */
+.fluent-progress-mini {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.fluent-progress-mini-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s var(--ease-fluent);
+}
+
+/* =============================================================
+   Animations
+   ============================================================= */
+
+/* Page Enter */
+@keyframes fluent-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.page-enter {
+  animation: fluent-enter 0.35s var(--ease-fluent);
+}
+
+/* Number Count Up */
+@keyframes fluent-count {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fluent-count {
+  animation: fluent-count 0.4s var(--ease-fluent);
+}
+
+/* Skeleton shimmer */
+@keyframes fluent-shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+.fluent-shimmer {
+  background: linear-gradient(90deg, #f3f2f1 25%, #e8e6e4 50%, #f3f2f1 75%);
+  background-size: 200px 100%;
+  animation: fluent-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-xs);
+}
+
+/* Pulsing glow for pending items */
+@keyframes fluent-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(255, 140, 0, 0);
+  }
+}
+.fluent-pulse {
+  animation: fluent-pulse 2s infinite;
+}
+
+
