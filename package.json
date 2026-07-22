@@ -1,0 +1,76 @@
+{
+  "name": "box-label-printer",
+  "version": "1.0.0",
+  "description": "箱牌标签打印管理系统 - 不干胶标签打印桌面应用",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "build:renderer": "vite build",
+    "build:electron": "electron-builder",
+    "build": "npm run build:renderer && npm run build:electron",
+    "publish:win": "npm run build:renderer && electron-builder --win --x64 --publish always",
+    "release:win": "npm run build:renderer && electron-builder --win --x64 --publish always",
+    "preview": "vite preview",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "box-label",
+    "label-printer",
+    "electron",
+    "react"
+  ],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@ant-design/icons": "^6.3.2",
+    "antd": "^5.29.3",
+    "dayjs": "^1.11.21",
+    "electron-updater": "^6.8.9",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.1",
+    "sql.js": "^1.14.1"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.5",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.boxlabel.printer",
+    "productName": "箱牌打印管理系统",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "YOUR_GITHUB_USERNAME",
+      "repo": "box-label-printer",
+      "releaseType": "release"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "language": "2052"
+    }
+  }
+}
