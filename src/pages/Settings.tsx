@@ -15,10 +15,7 @@ import { BOX_TYPE_LABELS } from '../types';
 
 const { Title, Text, Paragraph } = Typography;
 
-const PRINTER_HELP = `如何获取打印机名称？
-1. 打开 Windows 设置 → 蓝牙和其他设备 → 打印机和扫描仪
-2. 找到你的不干胶打印机
-3. 复制打印机名称粘贴到上方`;
+const PRINTER_HELP = `如何获取打印机名称？\n1. 打开 Windows 设置 → 蓝牙和其他设备 → 打印机和扫描仪\n2. 找到你的不干胶打印机\n3. 复制打印机名称粘贴到上方`;
 
 type SettingsData = {
   printer_name: string;
@@ -194,11 +191,11 @@ export default function Settings() {
       title: '操作', key: 'action', width: 160,
       render: (_: any, __: any, i: number) => (
         <Space size="small">
-          <Button size="small" icon={<ArrowUpOutlined />} disabled={i === 0} onClick={() => handleMoveField(i, 'up')} />
-          <Button size="small" icon={<ArrowDownOutlined />} disabled={i === fieldDefs.length - 1} onClick={() => handleMoveField(i, 'down')} />
-          <Button size="small" onClick={() => handleEditField(fieldDefs[i])}>编辑</Button>
+          <Button size="small" icon={<ArrowUpOutlined />} disabled={i === 0} onClick={() => handleMoveField(i, 'up')} style={{ borderRadius: 6 }} />
+          <Button size="small" icon={<ArrowDownOutlined />} disabled={i === fieldDefs.length - 1} onClick={() => handleMoveField(i, 'down')} style={{ borderRadius: 6 }} />
+          <Button size="small" onClick={() => handleEditField(fieldDefs[i])} style={{ borderRadius: 6 }}>编辑</Button>
           <Popconfirm title="确认删除？" onConfirm={() => handleDeleteField(fieldDefs[i].key)}>
-            <Button size="small" danger icon={<DeleteOutlined />} />
+            <Button size="small" danger icon={<DeleteOutlined />} style={{ borderRadius: 6 }} />
           </Popconfirm>
         </Space>
       ),
@@ -206,18 +203,26 @@ export default function Settings() {
   ];
 
   return (
-    <div>
-      <Title level={4}><SettingOutlined /> 系统设置</Title>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      {/* 页面标题 */}
+      <div style={{ marginBottom: 20 }}>
+        <Space>
+          <div style={{ width: 4, height: 22, background: '#1677ff', borderRadius: 2 }} />
+          <span style={{ fontSize: 18, fontWeight: 700, color: '#1f1f1f' }}>系统设置</span>
+        </Space>
+        <Text type="secondary" style={{ marginLeft: 10, fontSize: 13 }}>打印机 / 标签模板 / Logo / 字段配置</Text>
+      </div>
 
       <Row gutter={[24, 24]}>
-        <Col xs={24} lg={14}>
+        <Col xs={24} lg={15}>
           <Card
-            title="基本配置"
+            style={{ borderRadius: 14, border: '1px solid #f0f0f0' }}
+            bodyStyle={{ padding: '20px 24px' }}
             tabList={[
-              { key: 'printer', tab: '打印机' },
-              { key: 'label', tab: '标签模板' },
-              { key: 'logo', tab: '公司Logo' },
-              { key: 'fields', tab: '字段配置' },
+              { key: 'printer', tab: '🖨️ 打印机' },
+              { key: 'label', tab: '📋 标签模板' },
+              { key: 'logo', tab: '🖼️ 公司Logo' },
+              { key: 'fields', tab: '⚙️ 字段配置' },
             ]}
             activeTabKey={activeTab}
             onTabChange={(key) => setActiveTab(key)}
@@ -225,60 +230,93 @@ export default function Settings() {
             {/* 打印机设置 */}
             {activeTab === 'printer' && (
               <Form form={form} layout="vertical" onFinish={handleSave} initialValues={defaultSettings}>
-                <Alert message="打印说明" description={PRINTER_HELP} type="info" showIcon style={{ marginBottom: 24 }} />
+                <Alert message="打印说明" description={PRINTER_HELP} type="info" showIcon
+                  style={{ marginBottom: 24, borderRadius: 10 }} />
                 <Form.Item name="printer_name" label="打印机名称" tooltip="请填写 Windows 中显示的打印机名称">
-                  <Input placeholder="例：Zebra ZD421" prefix={<PrinterOutlined />} size="large" />
+                  <Input placeholder="例：Zebra ZD421" prefix={<PrinterOutlined />}
+                    size="large" style={{ borderRadius: 8 }} />
                 </Form.Item>
                 <Space align="start" size={16}>
                   <Form.Item name="label_width" label="标签宽度 (mm)" rules={[{ required: true }]}>
-                    <InputNumber min={20} max={300} addonAfter="mm" />
+                    <InputNumber min={20} max={300} addonAfter="mm" style={{ borderRadius: 8 }} />
                   </Form.Item>
                   <Form.Item name="label_height" label="标签高度 (mm)" rules={[{ required: true }]}>
-                    <InputNumber min={10} max={300} addonAfter="mm" />
+                    <InputNumber min={10} max={300} addonAfter="mm" style={{ borderRadius: 8 }} />
                   </Form.Item>
                 </Space>
-                <Divider />
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large">保存设置</Button>
+                <Divider style={{ borderColor: '#f0f0f0' }} />
+                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large"
+                  style={{ height: 42, borderRadius: 10, padding: '0 28px', fontWeight: 600, boxShadow: '0 4px 12px rgba(22,119,255,0.3)' }}>
+                  保存设置
+                </Button>
               </Form>
             )}
 
             {/* 标签模板 */}
             {activeTab === 'label' && (
               <Form form={form} layout="vertical" onFinish={handleSave} initialValues={defaultSettings}>
-                <div style={{ marginBottom: 24 }}>
-                  <Text strong>选择默认标签模板</Text>
-                  <Paragraph type="secondary" style={{ marginTop: 4 }}>新建箱牌时将默认使用此模板</Paragraph>
-                  <Form.Item name="label_template" noStyle>
-                    <Segmented
-                      value={form.getFieldValue('label_template') || 'standard'}
-                      onChange={(val) => form.setFieldsValue({ label_template: val })}
-                      options={templates.map((t) => ({
-                        value: t.id,
-                        label: <div style={{ padding: '4px 8px', textAlign: 'left', minWidth: 100 }}>
-                          <div style={{ fontWeight: 'bold', fontSize: 13 }}>{t.name}</div>
-                          <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{t.description}</div>
-                        </div>,
-                      }))}
-                      style={{ width: '100%' }}
-                    />
-                  </Form.Item>
+                <div style={{ marginBottom: 20 }}>
+                  <Text strong style={{ fontSize: 14 }}>选择默认标签模板</Text>
+                  <Paragraph type="secondary" style={{ marginTop: 4, marginBottom: 12, fontSize: 13 }}>新建箱牌时将默认使用此模板</Paragraph>
+
+                  <Row gutter={[12, 12]}>
+                    {templates.map((t) => {
+                      const selected = form.getFieldValue('label_template') === t.id;
+                      return (
+                        <Col span={8} key={t.id}>
+                          <div
+                            onClick={() => form.setFieldsValue({ label_template: t.id })}
+                            className="hover-card"
+                            style={{
+                              padding: 12,
+                              background: selected ? '#e6f4ff' : '#fafafa',
+                              border: `2px solid ${selected ? '#1677ff' : '#f0f0f0'}`,
+                              borderRadius: 12,
+                              textAlign: 'center',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                            }}
+                          >
+                            <div style={{
+                              height: 60,
+                              background: '#fff',
+                              border: '1px solid #e8e8e8',
+                              borderRadius: 8,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontSize: 10,
+                              color: '#999',
+                              marginBottom: 8,
+                            }}>
+                              <div style={{
+                                width: 40, height: 28,
+                                border: '1px solid #d9d9d9',
+                                borderRadius: 2,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                position: 'relative',
+                              }}>
+                                <div style={{ width: '100%', height: '100%', background: t.thumbnail.color, borderRadius: 1, opacity: 0.3 }} />
+                                <span style={{ position: 'absolute', fontSize: 7, color: '#666' }}>{t.name}</span>
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: selected ? '#1677ff' : '#333' }}>{t.name}</div>
+                            <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{t.defaultSize.width}×{t.defaultSize.height}mm</div>
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
                 </div>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  {templates.map((t) => (
-                    <div key={t.id}
-                      style={{ width: 120, padding: 8, background: t.thumbnail.color, border: `2px solid ${form.getFieldValue('label_template') === t.id ? '#1677ff' : '#e8e8e8'}`, borderRadius: 6, textAlign: 'center', cursor: 'pointer' }}
-                      onClick={() => form.setFieldsValue({ label_template: t.id })}>
-                      <div style={{ height: 80, background: '#fff', border: '1px solid #d9d9d9', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#999', marginBottom: 4 }}>{t.name}</div>
-                      <div style={{ fontSize: 11, fontWeight: 'bold' }}>{t.name}</div>
-                      <div style={{ fontSize: 9, color: '#999' }}>{t.defaultSize.width}×{t.defaultSize.height}mm</div>
-                    </div>
-                  ))}
-                </div>
-                <Form.Item name="company_name" label="公司名称" style={{ marginTop: 16 }}>
-                  <Input placeholder="将显示在箱牌标签顶部" maxLength={50} />
+
+                <Form.Item name="company_name" label="公司名称" style={{ marginTop: 8 }}>
+                  <Input placeholder="将显示在箱牌标签顶部" maxLength={50} style={{ borderRadius: 8 }} />
                 </Form.Item>
-                <Divider />
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large">保存设置</Button>
+                <Divider style={{ borderColor: '#f0f0f0' }} />
+                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large"
+                  style={{ height: 42, borderRadius: 10, padding: '0 28px', fontWeight: 600, boxShadow: '0 4px 12px rgba(22,119,255,0.3)' }}>
+                  保存设置
+                </Button>
               </Form>
             )}
 
@@ -286,38 +324,52 @@ export default function Settings() {
             {activeTab === 'logo' && (
               <div>
                 <div style={{ marginBottom: 16 }}>
-                  <Text strong>公司 Logo 上传</Text>
-                  <Paragraph type="secondary">支持 PNG/JPG，建议 200×200px，不超过 500KB</Paragraph>
+                  <Text strong style={{ fontSize: 14 }}>公司 Logo 上传</Text>
+                  <Paragraph type="secondary" style={{ marginTop: 4, fontSize: 13 }}>支持 PNG/JPG，建议 200×200px，不超过 500KB</Paragraph>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 24, padding: 24, background: '#fafafa', borderRadius: 8, border: '1px dashed #d9d9d9' }}>
-                  <div style={{ width: 80, height: 80, border: '1px solid #d9d9d9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#fff', flexShrink: 0 }}>
-                    {logoPreview ? <img src={logoPreview} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <EyeOutlined style={{ fontSize: 28, color: '#ccc' }} />}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 24,
+                  padding: 24, background: '#fafafa', borderRadius: 12,
+                  border: '1px dashed #d9d9d9',
+                }}>
+                  <div style={{
+                    width: 80, height: 80,
+                    border: '1px solid #e8e8e8', borderRadius: 10,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    overflow: 'hidden', background: '#fff', flexShrink: 0,
+                  }}>
+                    {logoPreview
+                      ? <img src={logoPreview} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      : <EyeOutlined style={{ fontSize: 28, color: '#ccc' }} />}
                   </div>
                   <div>
-                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/gif" onChange={handleLogoUpload} style={{ display: 'none' }} id="logo-input" />
+                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/gif"
+                      onChange={handleLogoUpload} style={{ display: 'none' }} id="logo-input" />
                     <Space>
-                      <Button icon={<UploadOutlined />} onClick={() => fileInputRef.current?.click()}>选择图片</Button>
-                      {logoPreview && <Button danger icon={<DeleteOutlined />} onClick={handleRemoveLogo}>移除</Button>}
+                      <Button icon={<UploadOutlined />} onClick={() => fileInputRef.current?.click()}
+                        style={{ borderRadius: 8, height: 36 }}>选择图片</Button>
+                      {logoPreview && <Button danger icon={<DeleteOutlined />} onClick={handleRemoveLogo}
+                        style={{ borderRadius: 8 }}>移除</Button>}
                     </Space>
                     <div style={{ marginTop: 4, fontSize: 12, color: '#999' }}>{logoPreview ? '已上传，保存后生效' : '未上传 Logo'}</div>
                   </div>
                 </div>
-                <Divider />
+                <Divider style={{ borderColor: '#f0f0f0' }} />
                 <Button type="primary" icon={<SaveOutlined />} onClick={() => {
                   if (window.electronAPI) {
                     window.electronAPI.setSetting('company_logo', logoPreview);
                     message.success('Logo 已保存');
                   }
-                }} size="large">保存 Logo</Button>
+                }} size="large" style={{ height: 42, borderRadius: 10, padding: '0 28px', fontWeight: 600 }}>保存 Logo</Button>
               </div>
             )}
 
-            {/* 字段配置（按箱型）*/}
+            {/* 字段配置 */}
             {activeTab === 'fields' && (
               <div>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <Space>
-                    <Text strong>字段管理</Text>
+                    <Text strong style={{ fontSize: 14 }}>字段管理</Text>
                     <Segmented
                       value={fieldBoxType}
                       onChange={(val) => switchFieldType(val as BoxType)}
@@ -326,12 +378,13 @@ export default function Settings() {
                         { value: 'outer', label: '外箱字段' },
                       ]}
                     />
-                    <Tag color={fieldBoxType === 'inner' ? 'blue' : 'purple'}>{BOX_TYPE_LABELS[fieldBoxType]}</Tag>
+                    <Tag color={fieldBoxType === 'inner' ? 'blue' : 'purple'} style={{ borderRadius: 4 }}>{BOX_TYPE_LABELS[fieldBoxType]}</Tag>
                   </Space>
                   <Space>
-                    <Button icon={<PlusOutlined />} type="primary" onClick={handleAddField}>添加字段</Button>
+                    <Button icon={<PlusOutlined />} type="primary" onClick={handleAddField}
+                      style={{ borderRadius: 8, height: 34 }}>添加字段</Button>
                     <Popconfirm title={`恢复 ${BOX_TYPE_LABELS[fieldBoxType]} 默认字段？`} onConfirm={handleResetFields}>
-                      <Button>恢复默认</Button>
+                      <Button style={{ borderRadius: 8, height: 34 }}>恢复默认</Button>
                     </Popconfirm>
                   </Space>
                 </div>
@@ -340,11 +393,16 @@ export default function Settings() {
                   当前配置：{BOX_TYPE_LABELS[fieldBoxType]}，共 {fieldDefs.length} 个字段
                 </Paragraph>
 
-                <Table dataSource={fieldDefs} columns={fieldColumns} rowKey="key" pagination={false} size="small" />
+                <Table dataSource={fieldDefs} columns={fieldColumns} rowKey="key" pagination={false} size="small"
+                  components={{
+                    header: {
+                      cell: (props: any) => (
+                        <th {...props} style={{ ...props?.style, background: '#fafafa', color: '#666', fontWeight: 600, fontSize: 12 }} />
+                      ),
+                    },
+                  }} />
 
-                <Divider />
-
-                <div style={{ padding: 12, background: '#fafafa', borderRadius: 6 }}>
+                <div style={{ padding: 12, background: '#fafafa', borderRadius: 8, marginTop: 16 }}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
                     <InfoCircleOutlined style={{ marginRight: 4 }} />
                     内箱和外箱的字段配置相互独立。修改后新建页面自动更新。
@@ -355,47 +413,81 @@ export default function Settings() {
           </Card>
         </Col>
 
-        <Col xs={24} lg={10}>
-          <Card title="当前配置摘要">
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="打印机">{settings.printer_name || <Text type="secondary">未配置</Text>}</Descriptions.Item>
-              <Descriptions.Item label="标签尺寸">{settings.label_width || 100} mm × {settings.label_height || 75} mm</Descriptions.Item>
-              <Descriptions.Item label="公司名称">{settings.company_name || '未设置'}</Descriptions.Item>
-              <Descriptions.Item label="默认模板">{templates.find(t => t.id === settings.label_template)?.name || '标准模板'}</Descriptions.Item>
-              <Descriptions.Item label="字段数量">{fieldDefs.length} 个</Descriptions.Item>
-              <Descriptions.Item label="Logo">{settings.company_logo ? <img src={settings.company_logo} alt="logo" style={{ height: 24, maxWidth: 80, objectFit: 'contain' }} /> : <Text type="secondary">未上传</Text>}</Descriptions.Item>
+        <Col xs={24} lg={9}>
+          <Card
+            title={<Space><SettingOutlined /><span style={{ fontSize: 14 }}>当前配置摘要</span></Space>}
+            style={{ borderRadius: 14, border: '1px solid #f0f0f0', marginBottom: 16 }}
+            bodyStyle={{ padding: '16px 20px' }}
+          >
+            <Descriptions column={1} size="small" colon={false}>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>🖨️ 打印机</span>}>
+                {settings.printer_name || <Text type="secondary">未配置</Text>}
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>📐 标签尺寸</span>}>
+                {settings.label_width || 100} mm × {settings.label_height || 75} mm
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>🏢 公司名称</span>}>
+                {settings.company_name || <Text type="secondary">未设置</Text>}
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>📄 默认模板</span>}>
+                {templates.find(t => t.id === settings.label_template)?.name || '标准模板'}
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>⚙️ 字段数量</span>}>
+                {fieldDefs.length} 个
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>🖼️ Logo</span>}>
+                {settings.company_logo
+                  ? <img src={settings.company_logo} alt="logo" style={{ height: 24, maxWidth: 80, objectFit: 'contain' }} />
+                  : <Text type="secondary">未上传</Text>}
+              </Descriptions.Item>
             </Descriptions>
-            <Divider />
-            <Card title="系统信息" size="small">
-              <Descriptions column={1} size="small">
-                <Descriptions.Item label="应用名称">箱牌打印管理系统</Descriptions.Item>
-                <Descriptions.Item label="版本号">{packageJson.version}</Descriptions.Item>
-                <Descriptions.Item label="运行环境">{window.electronAPI ? 'Electron' : '浏览器'}</Descriptions.Item>
-                <Descriptions.Item label="数据库">SQLite (本地存储)</Descriptions.Item>
-              </Descriptions>
-            </Card>
+          </Card>
+
+          <Card
+            title={<Space><InfoCircleOutlined /><span style={{ fontSize: 14 }}>系统信息</span></Space>}
+            style={{ borderRadius: 14, border: '1px solid #f0f0f0' }}
+            bodyStyle={{ padding: '16px 20px' }}
+          >
+            <Descriptions column={1} size="small" colon={false}>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>应用名称</span>}>箱牌打印管理系统</Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>版本号</span>}>
+                <Tag color="blue" style={{ borderRadius: 4 }}>v{packageJson.version}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>运行环境</span>}>
+                {window.electronAPI ? 'Electron' : '🌐 浏览器'}
+              </Descriptions.Item>
+              <Descriptions.Item label={<span style={{ color: '#666' }}>数据库</span>}>SQLite (本地存储)</Descriptions.Item>
+            </Descriptions>
           </Card>
         </Col>
       </Row>
 
       {/* 添加/编辑字段弹窗 */}
       <Modal
-        title={editingField ? '编辑字段' : '添加字段'}
+        title={
+          <Space>
+            <SettingOutlined />
+            <span>{editingField ? '编辑字段' : '添加字段'}</span>
+          </Space>
+        }
         open={fieldModalVisible}
         onOk={handleSaveField}
         onCancel={() => setFieldModalVisible(false)}
         okText="保存"
         cancelText="取消"
+        style={{ borderRadius: 12 }}
+        destroyOnClose
       >
         <Form form={fieldForm} layout="vertical" initialValues={{ type: 'text', required: false }}>
           <Form.Item name="label" label="字段显示名称" rules={[{ required: true, message: '请输入字段名称' }]}>
-            <Input placeholder="例：供应商代码" maxLength={20} disabled={!!editingField} />
+            <Input placeholder="例：供应商代码" maxLength={20} disabled={!!editingField} style={{ borderRadius: 8 }} />
           </Form.Item>
           {!editingField && (
-            <Alert message="字段键名将根据显示名称自动生成" type="info" showIcon style={{ marginBottom: 16 }} />
+            <Alert message="字段键名将根据显示名称自动生成" type="info" showIcon style={{ marginBottom: 16, borderRadius: 8 }} />
           )}
           <Form.Item name="type" label="字段类型">
-            <Select options={[{ value: 'text', label: '文本' }, { value: 'number', label: '数字' }]} />
+            <Select options={[{ value: 'text', label: '文本' }, { value: 'number', label: '数字' }]}
+              style={{ borderRadius: 8 }} />
           </Form.Item>
           <Form.Item name="required" label="是否必填" valuePropName="checked">
             <Switch checkedChildren="必填" unCheckedChildren="可选" />

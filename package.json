@@ -1,6 +1,6 @@
 {
   "name": "box-label-printer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "箱牌标签打印管理系统 - 不干胶标签打印桌面应用",
   "main": "electron/main.js",
   "scripts": {
@@ -59,8 +59,8 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "YOUR_GITHUB_USERNAME",
-      "repo": "box-label-printer",
+      "owner": "noahal1",
+      "repo": "boxlabelprint",
       "releaseType": "release"
     },
     "win": {

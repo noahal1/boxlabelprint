@@ -3,7 +3,7 @@ import {
   Form, Input, InputNumber, Button, Card, Row, Col,
   message, Space, Typography, Divider, Spin, Tag, Select,
 } from 'antd';
-import { SaveOutlined, QrcodeOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SaveOutlined, QrcodeOutlined, ReloadOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import PrintPreview from '../components/PrintPreview';
 import { loadFieldDefinitions, getSortedFields, buildSubmitData } from '../utils/fieldConfig';
 import type { FieldDefinition, BoxType } from '../types';
@@ -78,14 +78,14 @@ export default function BoxLabelForm() {
       return (
         <Form.Item key={field.key} name={field.key} label={field.label} rules={rules}
           tooltip={field.required ? '必填' : '可选'}>
-          <InputNumber style={{ width: '100%' }} min={0} precision={2} placeholder={`请输入${field.label}`} />
+          <InputNumber style={{ width: '100%', borderRadius: 8 }} min={0} precision={2} placeholder={`请输入${field.label}`} />
         </Form.Item>
       );
     }
     return (
       <Form.Item key={field.key} name={field.key} label={field.label} rules={rules}
         tooltip={field.required ? '必填' : '可选'}>
-        <Input placeholder={`请输入${field.label}`} maxLength={100} />
+        <Input placeholder={`请输入${field.label}`} maxLength={100} style={{ borderRadius: 8 }} />
       </Form.Item>
     );
   };
@@ -98,66 +98,73 @@ export default function BoxLabelForm() {
   const rightFields = fieldDefs.filter((_, i) => i % 2 === 1);
 
   return (
-    <div>
-      <Row gutter={24}>
-        <Col xs={24} lg={24}>
-          <Card
-            style={{ borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-            title={
-              <Space>
-                <div style={{ width: 6, height: 24, background: 'linear-gradient(180deg, #1677ff, #69b1ff)', borderRadius: 3 }} />
-                <span style={{ fontSize: 16, fontWeight: 600 }}>新建箱牌</span>
-                <Tag color={boxType === 'inner' ? 'blue' : 'purple'} style={{ borderRadius: 4, fontSize: 12, lineHeight: '22px' }}>
-                  {BOX_TYPE_LABELS[boxType]}
-                </Tag>
-              </Space>
-            }
-            extra={
-              <Space>
-                <Text type="secondary" style={{ fontSize: 13 }}>箱型：</Text>
-                <Select value={boxType} onChange={(val) => setBoxType(val as BoxType)}
-                  options={BOX_TYPE_OPTIONS} style={{ width: 100 }}
-                  dropdownStyle={{ borderRadius: 8 }} />
-              </Space>
-            }
-          >
-            <Form form={form} layout="vertical" onFinish={handleSubmit}
-              style={{ maxWidth: 700 }}>
+    <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <Card
+        style={{ borderRadius: 14, border: '1px solid #f0f0f0' }}
+        bodyStyle={{ padding: '24px 28px' }}
+        title={
+          <Space>
+            <div style={{ width: 4, height: 20, background: 'linear-gradient(180deg, #1677ff, #69b1ff)', borderRadius: 2 }} />
+            <span style={{ fontSize: 16, fontWeight: 600, color: '#1f1f1f' }}>新建箱牌</span>
+            <Tag color={boxType === 'inner' ? 'blue' : 'purple'} style={{ borderRadius: 4, fontSize: 12, lineHeight: '22px', marginLeft: 4 }}>
+              {BOX_TYPE_LABELS[boxType]}
+            </Tag>
+          </Space>
+        }
+        extra={
+          <Space>
+            <Text type="secondary" style={{ fontSize: 13 }}>箱型：</Text>
+            <Select value={boxType} onChange={(val) => setBoxType(val as BoxType)}
+              options={BOX_TYPE_OPTIONS} style={{ width: 100, borderRadius: 8 }}
+              dropdownStyle={{ borderRadius: 8 }} />
+          </Space>
+        }
+      >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
 
-              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', background: '#fafafa', borderRadius: 10, padding: '16px 20px', marginBottom: 8 }}>
-                <Form.Item label={<span style={{ fontWeight: 500 }}>箱号</span>} required help="" style={{ marginBottom: 0, flex: 1 }}>
-                  <Input value={boxNumber} onChange={(e) => setBoxNumber(e.target.value)}
-                    suffix={<Button size="small" type="text" icon={<ReloadOutlined />} loading={generating} onClick={generateBoxNumber} />}
-                    style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 15 }} />
-                </Form.Item>
-                <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap', paddingBottom: 4 }}>
-                  系统自动生成
-                </Text>
-              </div>
+          {/* 箱号区域 */}
+          <div style={{
+            display: 'flex', gap: 16, alignItems: 'flex-end',
+            background: 'linear-gradient(135deg, #e6f4ff 0%, #f0f5ff 100%)',
+            borderRadius: 12, padding: '18px 20px', marginBottom: 8,
+          }}>
+            <Form.Item label={<span style={{ fontWeight: 600, fontSize: 13 }}>箱号</span>} required help="" style={{ marginBottom: 0, flex: 1 }}>
+              <Input value={boxNumber} onChange={(e) => setBoxNumber(e.target.value)}
+                suffix={
+                  <Button size="small" type="text" icon={<ReloadOutlined />} loading={generating} onClick={generateBoxNumber}
+                    style={{ color: '#1677ff' }} />
+                }
+                style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 15, borderRadius: 8, border: '1px solid #d9d9d9' }} />
+            </Form.Item>
+            <Space size={4} style={{ paddingBottom: 4 }}>
+              <ThunderboltOutlined style={{ color: '#1677ff', fontSize: 13 }} />
+              <Text type="secondary" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>自动生成</Text>
+            </Space>
+          </div>
 
-              <Divider style={{ margin: '16px 0' }} />
+          <Divider style={{ margin: '16px 0', borderColor: '#f0f0f0' }} />
 
-              <Row gutter={24}>
-                <Col span={12}>{leftFields.map(renderField)}</Col>
-                <Col span={12}>{rightFields.map(renderField)}</Col>
-              </Row>
+          {/* 动态字段 */}
+          <Row gutter={24}>
+            <Col span={12}>{leftFields.map(renderField)}</Col>
+            <Col span={12}>{rightFields.map(renderField)}</Col>
+          </Row>
 
-              <Divider style={{ margin: '8px 0 16px' }} />
+          <Divider style={{ margin: '12px 0 20px', borderColor: '#f0f0f0' }} />
 
-              <Space size={16}>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large"
-                  style={{ height: 44, borderRadius: 10, padding: '0 28px', fontWeight: 600, boxShadow: '0 4px 12px rgba(22,119,255,0.3)' }}>
-                  保存箱牌
-                </Button>
-                <Button icon={<QrcodeOutlined />} onClick={handlePreview} size="large"
-                  style={{ height: 44, borderRadius: 10, padding: '0 28px' }}>
-                  预览标签
-                </Button>
-              </Space>
-            </Form>
-          </Card>
-      </Col>
-      </Row>
+          {/* 操作按钮 */}
+          <Space size={16}>
+            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading} size="large"
+              style={{ height: 44, borderRadius: 10, padding: '0 28px', fontWeight: 600, boxShadow: '0 4px 12px rgba(22,119,255,0.3)' }}>
+              保存箱牌
+            </Button>
+            <Button icon={<QrcodeOutlined />} onClick={handlePreview} size="large"
+              style={{ height: 44, borderRadius: 10, padding: '0 28px', border: '1px solid #d9d9d9' }}>
+              预览标签
+            </Button>
+          </Space>
+        </Form>
+      </Card>
 
       {previewData && (
         <PrintPreview
