@@ -14,7 +14,6 @@ import {
   SwitcherOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
-import UpdateNotification from './UpdateNotification';
 import pkg from '../../package.json';
 
 const { Header, Sider, Content } = Layout;
@@ -139,7 +138,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           theme="dark"
           width={240}
           style={{
-            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
             height: `calc(100vh - ${TITLE_BAR_HEIGHT}px)`,
             position: 'fixed',
             left: 0,
@@ -203,8 +203,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             )}
           </div>
 
-          {/* 菜单 */}
-          <div style={{ padding: '4px 0', flex: 1 }}>
+          {/* 菜单（撑满剩余空间） */}
+          <div style={{ padding: '4px 0', flex: 1, overflow: 'auto' }}>
             <Menu
               theme="dark"
               mode="inline"
@@ -294,7 +294,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </Space>
 
             <Space size={14}>
-              <UpdateNotification />
               {/* 用户头像 */}
               <div
                 style={{

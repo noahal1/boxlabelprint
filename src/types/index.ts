@@ -55,7 +55,8 @@ export interface UpdateProgress {
 /** Electron API */
 export interface ElectronAPI {
   // 数据库
-  getBoxLabels: (filters?: { status?: string; keyword?: string }) => Promise<BoxLabel[]>;
+  getBoxLabels: (filters?: { status?: string; keyword?: string; limit?: number }) => Promise<BoxLabel[]>;
+  getBoxLabelStats: () => Promise<{ total: number; printed: number; pending: number; inner: number; outer: number }>;
   createBoxLabel: (data: { box_number: string; box_type: BoxType; custom_fields: Record<string, string>; qr_content?: string }) => Promise<{ id: number }>;
   updateBoxLabel: (id: number, data: Partial<BoxLabel>) => Promise<{ success: boolean }>;
   deleteBoxLabel: (id: number) => Promise<{ success: boolean }>;

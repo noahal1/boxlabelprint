@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Table, Button, Tag, Space, Input, Select, Popconfirm, message, Modal, Typography, Tooltip,
 } from 'antd';
@@ -16,7 +16,8 @@ const { Text } = Typography;
 export default function BoxLabelList() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<BoxLabel[]>([]);
-  const [fieldDefs, setFieldDefs] = useState<FieldDefinition[]>([]);
+  const [innerFieldDefs, setInnerFieldDefs] = useState<FieldDefinition[]>([]);
+  const [outerFieldDefs, setOuterFieldDefs] = useState<FieldDefinition[]>([]);
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
   const [typeFilter, setTypeFilter] = useState<BoxType | undefined>(undefined);
@@ -26,9 +27,26 @@ export default function BoxLabelList() {
   const [printLogs, setPrintLogs] = useState<any[]>([]);
   const [logsVisible, setLogsVisible] = useState(false);
 
+  // 同时加载内箱和外箱的字段定义，合并为表格列
   useEffect(() => {
-    loadFieldDefinitions('inner').then((defs) => setFieldDefs(getSortedFields(defs)));
+    Promise.all([
+      loadFieldDefinitions('inner').then(getSortedFields),
+      loadFieldDefinitions('outer').then(getSortedFields),
+    ]).then(([inner, outer]) => {
+      setInnerFieldDefs(inner);
+      setOuterFieldDefs(outer);
+    });
   }, []);
+
+  // 合并两个箱型的字段列，优先用内箱标签，补充外箱独有的字段
+  const mergedFieldDefs = useMemo(() => {
+    const map = new Map<string, FieldDefinition>();
+    for (const f of innerFieldDefs) map.set(f.key, f);
+    for (const f of outerFieldDefs) {
+      if (!map.has(f.key)) map.set(f.key, f);
+    }
+    return Array.from(map.values());
+  }, [innerFieldDefs, outerFieldDefs]);
 
   const loadData = async () => {
     try {
@@ -106,7 +124,7 @@ export default function BoxLabelList() {
         </Tag>
       ),
     },
-    ...fieldDefs.slice(0, 5).map((f) => ({
+    ...mergedFieldDefs.slice(0, 5).map((f) => ({
       title: f.label, key: f.key, width: 160, ellipsis: true,
       render: (_: any, record: BoxLabel) => {
         const val = record.custom_fields?.[f.key];
@@ -222,7 +240,7 @@ export default function BoxLabelList() {
           columns={columns}
           rowKey="id"
           loading={loading}
-          scroll={{ x: fieldDefs.length * 100 + 700 }}
+          scroll={{ x: mergedFieldDefs.length * 100 + 700 }}
           rowSelection={{
             selectedRowKeys,
             onChange: (keys) => setSelectedRowKeys(keys),

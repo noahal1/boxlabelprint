@@ -1,5 +1,7 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
 const net = require('net');
 const { autoUpdater } = require('electron-updater');
 const { initDatabase, getDatabase } = require('./database');
@@ -140,6 +142,11 @@ ipcMain.handle('db:getBoxLabels', async (event, filters) => {
 
   sql += ' ORDER BY created_at DESC';
 
+  if (filters?.limit) {
+    sql += ' LIMIT ?';
+    params.push(filters.limit);
+  }
+
   const stmt = db.prepare(sql);
   const results = stmt.all(...params);
   // 解析 custom_fields JSON
@@ -147,6 +154,23 @@ ipcMain.handle('db:getBoxLabels', async (event, filters) => {
     ...row,
     custom_fields: parseJsonSafe(row.custom_fields, {}),
   }));
+});
+
+/** 箱牌统计数据（SQL COUNT 替代全量查询） */
+ipcMain.handle('db:getBoxLabelStats', async () => {
+  const db = getDatabase();
+  const total = db.prepare('SELECT COUNT(*) as c FROM box_labels').get();
+  const printed = db.prepare("SELECT COUNT(*) as c FROM box_labels WHERE status = 'printed'").get();
+  const pending = db.prepare("SELECT COUNT(*) as c FROM box_labels WHERE status = 'pending'").get();
+  const inner = db.prepare("SELECT COUNT(*) as c FROM box_labels WHERE box_type = 'inner'").get();
+  const outer = db.prepare("SELECT COUNT(*) as c FROM box_labels WHERE box_type = 'outer'").get();
+  return {
+    total: total.c,
+    printed: printed.c,
+    pending: pending.c,
+    inner: inner.c,
+    outer: outer.c,
+  };
 });
 
 ipcMain.handle('db:createBoxLabel', async (event, data) => {
@@ -365,11 +389,15 @@ ipcMain.handle('print:send', async (event, zplData) => {
 });
 
 /**
- * 系统打印预览：打开系统原生打印对话框打印 HTML 版标签
+ * 系统打印预览：将 HTML 转为 PDF 并用系统 PDF 查看器打开
+ * 相比 webContents.print() 的系统打印对话框，本方式可以显示完整的打印预览
  */
 ipcMain.handle('print:systemPreview', async (event, labelHtml) => {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'print-preview-'));
+  let printWindow = null;
+
   try {
-    const printWindow = new BrowserWindow({
+    printWindow = new BrowserWindow({
       width: 480,
       height: 600,
       show: false,
@@ -380,44 +408,49 @@ ipcMain.handle('print:systemPreview', async (event, labelHtml) => {
       },
     });
 
+    // 加载 HTML
     printWindow.loadURL(
       `data:text/html;charset=utf-8,${encodeURIComponent(labelHtml)}`
     );
 
+    // 等待页面加载完成
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('页面加载超时')), 15000);
-
       printWindow.webContents.on('did-finish-load', () => {
         clearTimeout(timeout);
         resolve();
       });
     });
 
-    // 安全清理：防止回调未触发时窗口泄漏
-    const safetyTimer = setTimeout(() => {
-      if (!printWindow.isDestroyed()) {
-        printWindow.close();
-      }
-    }, 120000);
+    // 生成 PDF
+    const pdfBuffer = await printWindow.webContents.printToPDF({
+      printBackground: true,
+      // HTML 模板已自带内边距，无需额外 margins
+      pageSize: { width: 220000, height: 160000 }, // 约 76×56mm
+    });
 
-    // 打开系统打印对话框
-    printWindow.show();
-    printWindow.webContents.print(
-      { silent: false, printBackground: true },
-      (success, failureReason) => {
-        if (!success) {
-          console.log('打印取消或失败:', failureReason);
-        }
-        clearTimeout(safetyTimer);
-        if (!printWindow.isDestroyed()) {
-          printWindow.close();
-        }
-      }
-    );
+    // 写入临时 PDF 文件
+    const pdfPath = path.join(tmpDir, `label-${Date.now()}.pdf`);
+    fs.writeFileSync(pdfPath, pdfBuffer);
 
-    return { success: true };
+    // 用系统默认 PDF 查看器打开（支持完整打印预览）
+    const openError = await shell.openPath(pdfPath);
+    if (openError) {
+      return { success: false, error: `无法打开 PDF 查看器: ${openError}` };
+    }
+
+    return { success: true, message: 'PDF 已生成并在 PDF 查看器中打开' };
   } catch (err) {
     return { success: false, error: err.message };
+  } finally {
+    // 关闭打印窗口
+    if (printWindow && !printWindow.isDestroyed()) {
+      printWindow.close();
+    }
+    // 清理临时目录（延迟以防 PDF 查看器还在读取）
+    setTimeout(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }, 5000);
   }
 });
 

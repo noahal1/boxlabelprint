@@ -1,6 +1,6 @@
 {
   "name": "box-label-printer",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "箱牌标签打印管理系统 - 不干胶标签打印桌面应用",
   "main": "electron/main.js",
   "scripts": {

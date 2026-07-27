@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
-import { Modal, Button, Space, message } from 'antd';
-import { PrinterOutlined, CloseOutlined, DesktopOutlined } from '@ant-design/icons';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import { Modal, Button, Space, message, Spin } from 'antd';
+import { PrinterOutlined, CloseOutlined, DesktopOutlined, EyeOutlined, CodeOutlined } from '@ant-design/icons';
 import QRCode from 'qrcode';
 import { getTemplateById } from '../templates';
 import type { LabelData } from '../templates';
+import { renderZplToPng } from '../utils/zplRenderer';
 
 interface PrintPreviewProps {
   visible: boolean;
@@ -23,6 +24,9 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     labelHeight: 75,
   });
   const [loadingSettings, setLoadingSettings] = useState(true);
+  const [previewTab, setPreviewTab] = useState<'template' | 'zpl'>('template');
+  const [zplImageUrl, setZplImageUrl] = useState('');
+  const [zplLoading, setZplLoading] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
@@ -52,12 +56,18 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
     load();
   }, [visible]);
 
+  // 供应商代码 + 物料编码（二维码和条码共用）
+  const combinedCode = useMemo(() => {
+    const getVal = (key: string) => data.displayFields.find(f => f.key === key)?.value || '';
+    return [getVal('supplier_code'), getVal('material_code')].filter(Boolean).join(' ') || data.box_number;
+  }, [data]);
+
   useEffect(() => {
-    if (!visible || !data?.qr_content) return;
-    QRCode.toDataURL(data.qr_content, { width: 100, margin: 1 })
+    if (!visible) return;
+    QRCode.toDataURL(combinedCode, { width: 100, margin: 1 })
       .then((url) => setQrDataUrl(url))
       .catch(console.error);
-  }, [visible, data]);
+  }, [visible, combinedCode]);
 
   useEffect(() => {
     if (!qrDataUrl || !containerRef.current) return;
@@ -70,6 +80,20 @@ export default function PrintPreview({ visible, data, onClose, onPrint }: PrintP
       (el as HTMLElement).style.display = 'block';
     }
   }, [qrDataUrl, data.box_number]);
+
+  // ========== ZPL 预览渲染 ==========
+  useEffect(() => {
+    if (!visible || previewTab !== 'zpl') return;
+    setZplLoading(true);
+    setZplImageUrl('');
+    const zpl = generateZPL(data);
+    renderZplToPng(zpl, settings.labelWidth, settings.labelHeight)
+      .then((url) => setZplImageUrl(url))
+      .catch((err) => {
+        console.error('ZPL 渲染失败:', err);
+      })
+      .finally(() => setZplLoading(false));
+  }, [visible, previewTab, data, settings.labelWidth, settings.labelHeight]);
 
   const handlePrint = async () => {
     try {
@@ -137,9 +161,9 @@ ${templateHtml}
 
       const result = await window.electronAPI.printSystemPreview(fullHtml);
       if (result.success) {
-        message.success('系统打印预览已打开');
+        message.success('PDF 预览已生成，请在 PDF 查看器中使用打印功能');
       } else {
-        message.error(result.error || '打开打印预览失败');
+        message.error(result.error || '生成 PDF 预览失败');
       }
     } catch (err: any) {
       message.error('系统打印预览失败: ' + (err?.message || '未知错误'));
@@ -168,7 +192,7 @@ ${templateHtml}
             disabled={loadingSettings || !qrDataUrl}
             style={{ borderRadius: 6, height: 34 }}
           >
-            系统打印预览
+            PDF 打印预览
           </Button>
           <Space>
             <Button
@@ -198,17 +222,113 @@ ${templateHtml}
         },
       }}
     >
+      {/* 预览切换标签 */}
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          marginBottom: 12,
+          padding: 3,
+          background: 'rgba(0,0,0,0.04)',
+          borderRadius: 8,
+        }}
+      >
+        <div
+          onClick={() => setPreviewTab('template')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 12.5,
+            fontWeight: previewTab === 'template' ? 600 : 400,
+            color:
+              previewTab === 'template'
+                ? '#1a1a1f'
+                : 'rgba(0,0,0,0.45)',
+            background:
+              previewTab === 'template'
+                ? '#fff'
+                : 'transparent',
+            boxShadow:
+              previewTab === 'template'
+                ? '0 1px 3px rgba(0,0,0,0.08)'
+                : 'none',
+            transition: 'all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1)',
+          }}
+          onMouseEnter={(e) => {
+            if (previewTab !== 'template') {
+              e.currentTarget.style.color = 'rgba(0,0,0,0.65)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (previewTab !== 'template') {
+              e.currentTarget.style.color = 'rgba(0,0,0,0.45)';
+            }
+          }}
+        >
+          <EyeOutlined />
+          <span>模板预览</span>
+        </div>
+        <div
+          onClick={() => setPreviewTab('zpl')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 6,
+            cursor: 'pointer',
+            fontSize: 12.5,
+            fontWeight: previewTab === 'zpl' ? 600 : 400,
+            color:
+              previewTab === 'zpl'
+                ? '#1a1a1f'
+                : 'rgba(0,0,0,0.45)',
+            background:
+              previewTab === 'zpl'
+                ? '#fff'
+                : 'transparent',
+            boxShadow:
+              previewTab === 'zpl'
+                ? '0 1px 3px rgba(0,0,0,0.08)'
+                : 'none',
+            transition: 'all 0.2s cubic-bezier(0.1, 0.9, 0.2, 1)',
+          }}
+          onMouseEnter={(e) => {
+            if (previewTab !== 'zpl') {
+              e.currentTarget.style.color = 'rgba(0,0,0,0.65)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (previewTab !== 'zpl') {
+              e.currentTarget.style.color = 'rgba(0,0,0,0.45)';
+            }
+          }}
+        >
+          <CodeOutlined />
+          <span>ZPL 预览</span>
+        </div>
+      </div>
+
       {/* 预览区域 — 亚克力卡片 */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'center',
-          padding: 24,
+          alignItems: previewTab === 'zpl' ? 'center' : 'flex-start',
+          padding: previewTab === 'zpl' ? 12 : 24,
           background: 'rgba(255,255,255,0.72)',
           backdropFilter: 'blur(20px) saturate(1.2)',
           WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
           borderRadius: 10,
-          minHeight: 200,
+          minHeight: previewTab === 'zpl' ? 320 : 200,
           border: '1px solid rgba(255,255,255,0.6)',
           position: 'relative',
           overflow: 'hidden',
@@ -227,18 +347,72 @@ ${templateHtml}
             pointerEvents: 'none',
           }}
         />
-        <div
-          ref={containerRef}
-          style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}
-        >
-          {factoryTemplate.render(data, {
-            companyName: settings.companyName,
-            companyLogo: settings.companyLogo,
-            departmentName: (data as any).department_name || '',
-            labelWidth: renderWidth,
-            boxType: (data as any).box_type,
-          })}
-        </div>
+
+        {previewTab === 'template' ? (
+          /* — 模板预览 — */
+          <div
+            ref={containerRef}
+            style={{ transform: 'scale(0.9)', transformOrigin: 'top center' }}
+          >
+            {factoryTemplate.render(data, {
+              companyName: settings.companyName,
+              companyLogo: settings.companyLogo,
+              departmentName: (data as any).department_name || '',
+              labelWidth: renderWidth,
+              boxType: (data as any).box_type,
+            })}
+          </div>
+        ) : (
+          /* — ZPL 预览 — */
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%',
+              minHeight: 280,
+            }}
+          >
+            {zplLoading ? (
+              <div style={{ textAlign: 'center' }}>
+                <Spin size="large" />
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: 12,
+                    color: 'rgba(0,0,0,0.45)',
+                  }}
+                >
+                  正在渲染 ZPL…
+                </div>
+              </div>
+            ) : zplImageUrl ? (
+              <img
+                src={zplImageUrl}
+                alt="ZPL 预览"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: 420,
+                  objectFit: 'contain',
+                  borderRadius: 4,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                  background: '#fff',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'rgba(0,0,0,0.3)',
+                  textAlign: 'center',
+                }}
+              >
+                ZPL 渲染失败
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </Modal>
   );
@@ -253,19 +427,35 @@ function escapeHtml(str: string): string {
     .replace(/>/g, '&gt;');
 }
 
+/** 供应商代码 + 物料编码的组合，用于二维码和条码 */
+function getCombinedCode(data: LabelData): string {
+  const getVal = (key: string) => data.displayFields.find(f => f.key === key)?.value || '';
+  return [getVal('supplier_code'), getVal('material_code')].filter(Boolean).join(' ') || data.box_number;
+}
+
 function generateZPL(data: LabelData): string {
   const header = '^XA\n^CF0,28\n';
   const footer = '^XZ';
-  const qrContent = data.qr_content || data.box_number;
-  const firstVal = data.displayFields[0]?.value || '';
-  const secondVal = data.displayFields[1]?.value || '';
+  const combined = getCombinedCode(data);
+
+  const LINE_HEIGHT = 30; // 每行间距（点）
+  const START_Y = 50;     // 第一个字段起始 Y
+
+  // 动态生成所有字段行
+  const fieldLines = data.displayFields.map((field, i) => {
+    const y = START_Y + i * LINE_HEIGHT;
+    return `^FO20,${y}^FD${field.label}: ${field.value || ''}^FS`;
+  });
+
+  // 条码位置在所有字段下方
+  const barcodeY = START_Y + data.displayFields.length * LINE_HEIGHT + 20;
+
   const body = [
     `^CF0,30`,
     `^FO20,15^FD箱号: ${data.box_number}^FS`,
-    `^FO20,50^FD${data.displayFields[0]?.label || ''}: ${firstVal}^FS`,
-    `^FO20,80^FD${data.displayFields[1]?.label || ''}: ${secondVal}^FS`,
-    `^FO280,15^BQN,2,6^FDQA,${qrContent}^FS`,
-    `^FO20,200^BY2^BCN,40,Y,N^FD${data.box_number}^FS`,
+    ...fieldLines,
+    `^FO280,15^BQN,2,6^FDQA,${combined}^FS`,
+    `^FO20,${barcodeY}^BY2^BCN,40,Y,N^FD${combined}^FS`,
   ]
     .filter(Boolean)
     .join('\n');

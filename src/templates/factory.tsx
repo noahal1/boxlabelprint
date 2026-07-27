@@ -55,6 +55,7 @@ const factoryTemplate: LabelTemplate = {
       fontSize: 8.5,
       fontWeight: 'bold',
       fontFamily: "'Courier New', monospace",
+      borderRight: `1px solid ${bc}`,
       borderBottom: `1px solid ${bc}`,
       wordBreak: 'break-all',
       lineHeight: 1.3,
@@ -65,6 +66,13 @@ const factoryTemplate: LabelTemplate = {
     const f = (idx: number) => fields[idx];
     const v = (idx: number) => f(idx)?.value || '-';
     const l = (idx: number) => f(idx)?.label || '';
+
+    // 条形码内容 = 供应商代码 + 物料编码
+    const getFieldVal = (key: string) => fields.find(f => f.key === key)?.value || '';
+    const barcodeContent = [getFieldVal('supplier_code'), getFieldVal('material_code')]
+      .filter(Boolean)
+      .join(' ');
+    const barcodeDisplay = barcodeContent || data.box_number;
 
     return (
       <div
@@ -81,14 +89,14 @@ const factoryTemplate: LabelTemplate = {
         <div
           style={{
             textAlign: 'center',
-            padding: '10px 8px 6px',
+            padding: '6px 2px',
             borderBottom: `2px solid ${bc}`,
           }}
         >
           <div style={{ fontSize: 13, fontWeight: 'bold', letterSpacing: 1.5, lineHeight: 1.4 }}>
             {companyName || '公司名称'}
           </div>
-          <div style={{ fontSize: 10, color: '#555', marginTop: 2, letterSpacing: 1 }}>
+          <div style={{ fontSize: 9, color: '#555', letterSpacing: 1 }}>
             {departmentName || '部门名称'}
           </div>
         </div>
@@ -100,16 +108,14 @@ const factoryTemplate: LabelTemplate = {
           style={{
             width: '100%',
             borderCollapse: 'collapse',
-            borderLeft: `1px solid ${bc}`,
-            borderRight: `1px solid ${bc}`,
             tableLayout: 'fixed',
           }}
         >
           <colgroup>
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '27%' }} />
-            <col style={{ width: '13%' }} />
-            <col style={{ width: '42%' }} />
+            <col style={{ width: '17%' }} />
+            <col style={{ width: '28%' }} />
+            <col style={{ width: '15%' }} />
+            <col style={{ width: '35%' }} />
           </colgroup>
           <tbody>
             {/* ---- Row 1: 供应商代码 | 值 | 物料编号 | 值 ---- */}
@@ -117,7 +123,7 @@ const factoryTemplate: LabelTemplate = {
               <td style={labelStyle}>{l(0) || '供应商代码'}</td>
               <td style={valueStyle}>{v(0)}</td>
               <td style={labelStyle}>{l(1) || '物料编号'}</td>
-              <td style={{ ...valueStyle, borderRight: 0 }}>{v(1)}</td>
+              <td style={valueStyle}>{v(1)}</td>
             </tr>
 
             {/* ---- Row 2: 合金状态 | 值 | 规格 | 值 ---- */}
@@ -125,7 +131,7 @@ const factoryTemplate: LabelTemplate = {
               <td style={labelStyle}>{l(2) || '合金状态'}</td>
               <td style={valueStyle}>{v(2)}</td>
               <td style={labelStyle}>{l(3) || '规格'}</td>
-              <td style={{ ...valueStyle, borderRight: 0 }}>{v(3)}</td>
+              <td style={valueStyle}>{v(3)}</td>
             </tr>
 
             {/* ---- Row 3: 箱号 | 值（占 col2）| QR 区（占 col3+col4，跨5行）---- */}
@@ -134,8 +140,8 @@ const factoryTemplate: LabelTemplate = {
               <td
                 style={{
                   ...valueStyle,
-                  padding: '3px 6px',
-                  fontSize: 8,
+                  padding: '2px',
+                  fontSize: 7,
                   fontFamily: "'Courier New', monospace",
                   fontWeight: 'bold',
                   whiteSpace: 'nowrap',
@@ -157,8 +163,8 @@ const factoryTemplate: LabelTemplate = {
                 <div
                   id={`qr-container-${data.box_number}`}
                   style={{
-                    width: 72,
-                    height: 72,
+                    width: 78,
+                    height: 78,
                     margin: '0 auto',
                     border: '1px solid #ccc',
                     display: 'flex',
@@ -171,7 +177,7 @@ const factoryTemplate: LabelTemplate = {
                 >
                   二维码
                 </div>
-                <div style={{ fontSize: 7, color: '#666', marginTop: 2, lineHeight: 1.4 }}>
+                <div style={{ fontSize: 5, color: '#666', marginTop: 2, lineHeight: 1.4 }}>
                   BZ02
                   <br />
                   BZ09
@@ -219,7 +225,6 @@ const factoryTemplate: LabelTemplate = {
         <div
           style={{
             borderTop: `2px solid ${bc}`,
-            padding: '8px 10px 4px',
             textAlign: 'center',
             position: 'relative',
           }}
@@ -231,23 +236,24 @@ const factoryTemplate: LabelTemplate = {
               gap: 2,
               justifyContent: 'center',
               alignItems: 'flex-end',
-              height: 28,
+              height: 24,
             }}
           >
-            {barcodePattern(data.box_number).map((h, i) => (
+            {barcodePattern(barcodeContent).map((h, i) => (
               <div key={i} style={{ width: 2.5, height: h, background: bc }} />
             ))}
           </div>
           <div
             style={{
-              fontSize: 9,
+              fontSize: 6 ,
               marginTop: 3,
               fontFamily: 'monospace',
               fontWeight: 'bold',
-              letterSpacing: 2,
+              letterSpacing: 1.5,
+              wordBreak: 'break-all',
             }}
           >
-            {data.box_number}
+            {barcodeDisplay}
           </div>
 
           {/* 内箱/外箱标识 — 右下角 */}

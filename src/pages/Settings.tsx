@@ -1,18 +1,29 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Card, Form, Input, InputNumber, Button, message, Space, Typography, Divider,
   Descriptions, Alert, Spin, Row, Col, Segmented, Table, Switch, Select, Modal, Popconfirm, Tag,
+  Progress,
 } from 'antd';
 import {
   PrinterOutlined, SaveOutlined, InfoCircleOutlined, SettingOutlined,
   UploadOutlined, DeleteOutlined, EyeOutlined, PlusOutlined, ArrowUpOutlined, ArrowDownOutlined,
+  ReloadOutlined, DownloadOutlined, CheckCircleOutlined, CloseOutlined,
 } from '@ant-design/icons';
 import packageJson from '../../package.json';
 import { loadFieldDefinitions, getDefaultFieldDefinitions, getSortedFields } from '../utils/fieldConfig';
-import type { FieldDefinition, BoxType } from '../types';
+import type { FieldDefinition, BoxType, UpdateInfo, UpdateProgress } from '../types';
 import { BOX_TYPE_LABELS } from '../types';
 
 const { Title, Text, Paragraph } = Typography;
+
+type UpdateState =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'downloading'
+  | 'downloaded'
+  | 'not-available'
+  | 'error';
 
 const PRINTER_HELP = `如何获取打印机 IP 地址？\n1. 在打印机面板上打印一张"网络配置页"（Network Config / Self Test）\n2. 查找 "IP Address" 字段，通常格式如 192.168.1.xxx\n3. 将该 IP 地址填入上方，端口保持默认 9100 即可`;
 
@@ -48,6 +59,74 @@ export default function Settings() {
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('printer');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 自动更新状态
+  const [updateState, setUpdateState] = useState<UpdateState>('idle');
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [updateProgress, setUpdateProgress] = useState<UpdateProgress | null>(null);
+  const [updateError, setUpdateError] = useState('');
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (!window.electronAPI) return;
+    const unsubs: (() => void)[] = [];
+    unsubs.push(window.electronAPI.onUpdateChecking(() => setUpdateState('checking')));
+    unsubs.push(window.electronAPI.onUpdateAvailable((info) => {
+      setUpdateInfo(info);
+      setUpdateState('available');
+    }));
+    unsubs.push(window.electronAPI.onUpdateNotAvailable(() => {
+      setUpdateState('not-available');
+      setTimeout(() => setUpdateState('idle'), 3000);
+    }));
+    unsubs.push(window.electronAPI.onUpdateProgress((p) => {
+      setUpdateProgress(p);
+      setUpdateState('downloading');
+    }));
+    unsubs.push(window.electronAPI.onUpdateDownloaded((info) => {
+      setUpdateInfo(info);
+      setUpdateState('downloaded');
+      setUpdateProgress(null);
+    }));
+    unsubs.push(window.electronAPI.onUpdateError((err) => {
+      setUpdateError(err.message);
+      setUpdateState('error');
+    }));
+    return () => unsubs.forEach((fn) => fn());
+  }, []);
+
+  const handleCheckUpdate = useCallback(async () => {
+    if (!window.electronAPI) {
+      message.info('开发模式下不检查更新');
+      return;
+    }
+    setUpdateState('checking');
+    setUpdateModalVisible(true);
+    const result = await window.electronAPI.updateCheck();
+    if (!result.success) {
+      setUpdateError(result.error || '检查更新失败');
+      setUpdateState('error');
+    }
+  }, []);
+
+  const handleDownloadUpdate = useCallback(async () => {
+    if (!window.electronAPI) return;
+    setUpdateState('downloading');
+    setUpdateProgress({ percent: 0, bytesPerSecond: 0, transferred: 0, total: 0 });
+    await window.electronAPI.updateDownload();
+  }, []);
+
+  const handleInstallUpdate = useCallback(async () => {
+    if (!window.electronAPI) return;
+    await window.electronAPI.updateInstall();
+  }, []);
+
+  const handleCloseUpdate = () => {
+    setUpdateModalVisible(false);
+    if (updateState === 'not-available' || updateState === 'error') {
+      setTimeout(() => setUpdateState('idle'), 300);
+    }
+  };
 
   const [fieldBoxType, setFieldBoxType] = useState<BoxType>('inner');
   const [fieldDefs, setFieldDefs] = useState<FieldDefinition[]>([]);
@@ -596,9 +675,20 @@ export default function Settings() {
                 箱牌打印管理系统
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>版本号</span>}>
-                <Tag color="blue" style={{ borderRadius: 4 }}>
-                  v{packageJson.version}
-                </Tag>
+                <Space>
+                  <Tag color="blue" style={{ borderRadius: 4 }}>
+                    v{packageJson.version}
+                  </Tag>
+                  <Button
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={handleCheckUpdate}
+                    loading={updateState === 'checking'}
+                    style={{ borderRadius: 6, height: 26, fontSize: 12 }}
+                  >
+                    检查更新
+                  </Button>
+                </Space>
               </Descriptions.Item>
               <Descriptions.Item label={<span style={{ color: '#605e5c' }}>运行环境</span>}>
                 {window.electronAPI ? 'Electron' : '浏览器'}
@@ -657,6 +747,116 @@ export default function Settings() {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* ====== 更新弹窗 ====== */}
+      <Modal
+        title={
+          <Space>
+            <DownloadOutlined style={{ color: '#0078d4' }} />
+            <span>软件更新</span>
+          </Space>
+        }
+        open={updateModalVisible}
+        onCancel={handleCloseUpdate}
+        width={480}
+        footer={
+          <Space>
+            <Button onClick={handleCloseUpdate} style={{ borderRadius: 6, height: 34 }}>
+              关闭
+            </Button>
+            {updateState === 'available' && (
+              <Button type="primary" icon={<DownloadOutlined />} onClick={handleDownloadUpdate}
+                style={{ borderRadius: 6, height: 34 }}>
+                下载更新
+              </Button>
+            )}
+            {updateState === 'downloaded' && (
+              <Button type="primary" icon={<CheckCircleOutlined />} onClick={handleInstallUpdate}
+                style={{ borderRadius: 6, height: 34 }}>
+                立即安装
+              </Button>
+            )}
+            {updateState === 'downloading' && (
+              <Button disabled style={{ borderRadius: 6, height: 34 }}>下载中...</Button>
+            )}
+          </Space>
+        }
+        styles={{ body: { padding: '16px 24px' } }}
+      >
+        {updateState === 'checking' && (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <ReloadOutlined spin style={{ fontSize: 36, color: '#0078d4' }} />
+            <Paragraph style={{ marginTop: 12, color: '#605e5c' }}>正在检查更新...</Paragraph>
+          </div>
+        )}
+        {updateState === 'available' && updateInfo && (
+          <div>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <DownloadOutlined style={{ fontSize: 36, color: '#0078d4' }} />
+              <Title level={5} style={{ marginTop: 8, color: '#1a1a1f' }}>
+                发现新版本 v{updateInfo.version}
+              </Title>
+              <Text style={{ color: '#605e5c', fontSize: 13 }}>
+                当前版本: v{packageJson.version} → 新版本: v{updateInfo.version}
+              </Text>
+            </div>
+            {updateInfo.releaseNotes && (
+              <div style={{ background: '#faf9f8', padding: 12, borderRadius: 8, fontSize: 12,
+                maxHeight: 150, overflow: 'auto', border: '1px solid #edebe9' }}>
+                <Text strong style={{ color: '#1a1a1f' }}>更新内容：</Text>
+                <div style={{ marginTop: 4, whiteSpace: 'pre-wrap', color: '#605e5c' }}>
+                  {updateInfo.releaseNotes}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        {updateState === 'downloading' && updateProgress && (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <Progress type="circle" percent={Math.round(updateProgress.percent)}
+              size={100} strokeColor="#0078d4" trailColor="#edebe9"
+              format={(p) => <span style={{ color: '#1a1a1f', fontWeight: 600 }}>{p}%</span>} />
+            <Paragraph style={{ marginTop: 12, color: '#605e5c' }}>
+              正在下载更新...<br />
+              <Text style={{ color: '#8a8886', fontSize: 12 }}>
+                {formatBytes(updateProgress.transferred)} / {formatBytes(updateProgress.total)}
+              </Text>
+            </Paragraph>
+          </div>
+        )}
+        {updateState === 'downloaded' && (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <CheckCircleOutlined style={{ fontSize: 48, color: '#107c10' }} />
+            <Title level={5} style={{ marginTop: 12, color: '#1a1a1f' }}>更新已就绪</Title>
+            <Paragraph style={{ color: '#605e5c' }}>
+              新版本 v{updateInfo?.version} 已下载完成，点击立即安装重启应用
+            </Paragraph>
+          </div>
+        )}
+        {updateState === 'error' && (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <CloseOutlined style={{ fontSize: 36, color: '#d13438' }} />
+            <Paragraph style={{ marginTop: 12, color: '#d13438' }}>检查更新失败</Paragraph>
+            <Text style={{ color: '#8a8886', fontSize: 12 }}>{updateError || '请检查网络后重试'}</Text>
+          </div>
+        )}
+        {updateState === 'not-available' && (
+          <div style={{ textAlign: 'center', padding: 24 }}>
+            <CheckCircleOutlined style={{ fontSize: 36, color: '#107c10' }} />
+            <Paragraph style={{ marginTop: 12, color: '#605e5c' }}>
+              当前已是最新版本 (v{packageJson.version})
+            </Paragraph>
+          </div>
+        )}
+      </Modal>
     </div>
   );
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }

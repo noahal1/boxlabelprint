@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // ========== 数据库操作 ==========
   getBoxLabels: (filters) => ipcRenderer.invoke('db:getBoxLabels', filters),
+  getBoxLabelStats: () => ipcRenderer.invoke('db:getBoxLabelStats'),
   createBoxLabel: (data) => ipcRenderer.invoke('db:createBoxLabel', data),
   updateBoxLabel: (id, data) => ipcRenderer.invoke('db:updateBoxLabel', id, data),
   deleteBoxLabel: (id) => ipcRenderer.invoke('db:deleteBoxLabel', id),

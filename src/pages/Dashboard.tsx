@@ -40,15 +40,13 @@ export default function Dashboard() {
     try {
       setLoading(true);
       if (!window.electronAPI) return;
-      const allLabels = await window.electronAPI.getBoxLabels();
-      setStats({
-        total: allLabels.length,
-        printed: allLabels.filter((l) => l.status === 'printed').length,
-        pending: allLabels.filter((l) => l.status === 'pending').length,
-        inner: allLabels.filter((l) => l.box_type === 'inner').length,
-        outer: allLabels.filter((l) => l.box_type === 'outer').length,
-      });
-      setRecentLabels(allLabels.slice(0, 8));
+      // 并行加载：统计用 SQL COUNT，最近列表用 LIMIT 8
+      const [statsResult, recentResult] = await Promise.all([
+        window.electronAPI.getBoxLabelStats(),
+        window.electronAPI.getBoxLabels({ limit: 8 }),
+      ]);
+      setStats(statsResult);
+      setRecentLabels(recentResult);
     } catch (err) {
       console.error('加载失败:', err);
     } finally {
@@ -98,7 +96,7 @@ export default function Dashboard() {
       title: '箱型',
       dataIndex: 'box_type',
       key: 'box_type',
-      width: 60,
+      width: 56,
       render: (val: BoxType) => (
         <Tag
           color={val === 'inner' ? 'blue' : 'purple'}
@@ -109,26 +107,10 @@ export default function Dashboard() {
       ),
     },
     {
-      title: '供应商代码',
-      key: 'supplier_code',
-      width: 120,
-      ellipsis: true,
-      render: (_: any, r: BoxLabel) =>
-        r.custom_fields?.supplier_code || <span style={{ color: '#ddd' }}>-</span>,
-    },
-    {
-      title: '物料编码',
-      key: 'material_code',
-      width: 120,
-      ellipsis: true,
-      render: (_: any, r: BoxLabel) =>
-        r.custom_fields?.material_code || <span style={{ color: '#ddd' }}>-</span>,
-    },
-    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 72,
+      width: 68,
       render: (s: string) =>
         s === 'printed' ? (
           <Tag color="success" style={{ borderRadius: 4, margin: 0 }}>
@@ -144,8 +126,11 @@ export default function Dashboard() {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 150,
-      render: (val: string) => <span style={{ color: '#605e5c', fontSize: 12 }}>{val}</span>,
+      width: 130,
+      render: (val: string) => {
+        const short = val?.length > 10 ? val.slice(0, 10) : val;
+        return <span style={{ color: '#605e5c', fontSize: 12 }}>{short}</span>;
+      },
     },
   ];
 
