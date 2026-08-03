@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // ========== 打印 ==========
   printSend: (zplData) => ipcRenderer.invoke('print:send', zplData),
+  printTest: (options) => ipcRenderer.invoke('print:test', options || {}),
   printSystemPreview: (labelHtml) => ipcRenderer.invoke('print:systemPreview', labelHtml),
 
   // ========== 自动更新 ==========

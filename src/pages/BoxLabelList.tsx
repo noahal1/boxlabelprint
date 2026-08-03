@@ -9,6 +9,7 @@ import {
 import type { BoxLabel, FieldDefinition, BoxType } from '../types';
 import { BOX_TYPE_LABELS } from '../types';
 import { loadFieldDefinitions, getSortedFields, extractDisplayValues } from '../utils/fieldConfig';
+import { isValidIpv4 } from '../utils/ipValidation';
 import PrintPreview from '../components/PrintPreview';
 
 const { Text } = Typography;
@@ -94,16 +95,22 @@ export default function BoxLabelList() {
   const handlePrintConfirm = async (record: BoxLabel) => {
     try {
       if (!window.electronAPI) return;
-      const printerName = await window.electronAPI.getSetting('printer_name');
-      if (!printerName) {
-        message.warning('请先配置打印机');
+      const printerIp = (await window.electronAPI.getSetting('printer_ip')) || '';
+      if (!printerIp.trim()) {
+        message.warning('请先在系统设置中配置打印机的 IP 地址');
         return;
       }
+      if (!isValidIpv4(printerIp)) {
+        message.warning('打印机 IP 地址格式不正确，请到系统设置中检查');
+        return;
+      }
+      // 打印日志中记录打印机名称，未配置时回退为 IP 地址。
+      // 仅在预览弹窗确认出纸（confirmed）后才会走到这里
+      const printerName = (await window.electronAPI.getSetting('printer_name')) || printerIp.trim();
       await window.electronAPI.markPrinted(record.id, printerName);
-      message.success(`箱牌 ${record.box_number} 打印完成`);
       loadData();
     } catch (err: any) {
-      message.error('打印失败: ' + (err?.message || ''));
+      message.error('更新打印状态失败: ' + (err?.message || ''));
     }
   };
 

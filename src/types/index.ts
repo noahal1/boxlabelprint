@@ -80,7 +80,28 @@ export interface ElectronAPI {
   windowIsMaximized: () => Promise<boolean>;
 
   // 打印
-  printSend: (zplData: string) => Promise<{ success: boolean; error?: string; data?: string; message?: string; printerName?: string }>;
+  printSend: (zplData: string) => Promise<{
+    success: boolean;
+    error?: string;
+    data?: string;
+    message?: string;
+    printerName?: string;
+    sent?: boolean;
+    confirmed?: boolean;
+    durationMs?: number;
+  }>;
+  printTest: (options?: { ip?: string; port?: string | number; sendTestLabel?: boolean }) => Promise<{
+    success: boolean;
+    error?: string;
+    message?: string;
+    printerName?: string;
+    latencyMs?: number;
+    connected?: boolean;
+    zplDetected?: boolean;
+    labelSent?: boolean;
+    sent?: boolean;
+    confirmed?: boolean;
+  }>;
   printSystemPreview: (labelHtml: string) => Promise<{ success: boolean; error?: string }>;
 
   // 自动更新

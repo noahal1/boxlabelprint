@@ -1,29 +1,6 @@
 import React from 'react';
 import type { LabelTemplate } from './types';
 
-/**
- * 工厂模板 — 按用户提供的布局示意图实现
- *
- * ┌──────────────────────────────────────────────┐
- * │         南宁产投铝基新材料集团有限责任公司       │
- * │                  铝箔事业一部                   │
- * ├──────┬──────┬──────┬──────┤
- * │供应商│值    │物料  │值    │
- * ├──────┼──────┼──────┼──────┤
- * │合金  │值    │规格  │值    │
- * ├──────┼──────┴──────┘      │
- * │箱号  │值           │ QR   │
- * ├──────┤             │      │
- * │批号  │值           │      │
- * ├──────┤             ├──────┤
- * │长度  │值           │手写  │
- * ├──────┤             │标注  │
- * │净重  │值           │      │
- * ├──────┤             │      │
- * │毛重  │值           │      │
- * └──────┴─────────────┴──────┘
- *          ═══ 条形码 ═══
- */
 
 const factoryTemplate: LabelTemplate = {
   id: 'factory',
@@ -79,7 +56,6 @@ const factoryTemplate: LabelTemplate = {
         style={{
           width: labelWidth,
           background: '#fff',
-          border: `2px solid ${bc}`,
           fontFamily: "'Microsoft YaHei', 'Segoe UI', sans-serif",
         }}
       >
@@ -123,7 +99,7 @@ const factoryTemplate: LabelTemplate = {
               <td style={labelStyle}>{l(0) || '供应商代码'}</td>
               <td style={valueStyle}>{v(0)}</td>
               <td style={labelStyle}>{l(1) || '物料编号'}</td>
-              <td style={valueStyle}>{v(1)}</td>
+              <td style={{ ...valueStyle, borderRight: 0 }}>{v(1)}</td>
             </tr>
 
             {/* ---- Row 2: 合金状态 | 值 | 规格 | 值 ---- */}
@@ -131,7 +107,7 @@ const factoryTemplate: LabelTemplate = {
               <td style={labelStyle}>{l(2) || '合金状态'}</td>
               <td style={valueStyle}>{v(2)}</td>
               <td style={labelStyle}>{l(3) || '规格'}</td>
-              <td style={valueStyle}>{v(3)}</td>
+              <td style={{ ...valueStyle, borderRight: 0 }}>{v(3)}</td>
             </tr>
 
             {/* ---- Row 3: 箱号 | 值（占 col2）| QR 区（占 col3+col4，跨5行）---- */}

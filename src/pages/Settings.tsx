@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons';
 import packageJson from '../../package.json';
 import { loadFieldDefinitions, getDefaultFieldDefinitions, getSortedFields } from '../utils/fieldConfig';
+import { isValidIpv4 } from '../utils/ipValidation';
 import type { FieldDefinition, BoxType, UpdateInfo, UpdateProgress } from '../types';
 import { BOX_TYPE_LABELS } from '../types';
 
@@ -59,6 +60,20 @@ export default function Settings() {
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('printer');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 打印机连接测试
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    error?: string;
+    message?: string;
+    latencyMs?: number;
+    connected?: boolean;
+    zplDetected?: boolean;
+    labelSent?: boolean;
+    sent?: boolean;
+    confirmed?: boolean;
+  } | null>(null);
 
   // 自动更新状态
   const [updateState, setUpdateState] = useState<UpdateState>('idle');
@@ -169,6 +184,34 @@ export default function Settings() {
     loadSettings();
     loadFieldDefs();
   }, []);
+
+  const handleTestConnection = async (sendTestLabel: boolean) => {
+    try {
+      const values = form.getFieldsValue(['printer_ip', 'printer_port']);
+      const ip = (values.printer_ip || '').trim();
+      const port = values.printer_port || '9100';
+      if (!ip) {
+        message.warning('请先填写打印机 IP 地址');
+        return;
+      }
+      if (!isValidIpv4(ip)) {
+        message.warning('IP 地址格式不正确，例：192.168.1.100');
+        return;
+      }
+      if (!window.electronAPI) {
+        message.warning('请在 Electron 环境中使用此功能');
+        return;
+      }
+      setTesting(true);
+      setTestResult(null);
+      const result = await window.electronAPI.printTest({ ip, port, sendTestLabel });
+      setTestResult(result);
+    } catch (err: any) {
+      setTestResult({ success: false, error: err?.message || '测试连接失败' });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const handleSave = async (values: any) => {
     try {
@@ -368,8 +411,10 @@ export default function Settings() {
                     rules={[
                       { required: true, message: '请输入打印机 IP 地址' },
                       {
-                        pattern: /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
-                        message: 'IP 地址格式不正确，例：192.168.1.100',
+                        validator: (_, value: string) =>
+                          !value || isValidIpv4(value)
+                            ? Promise.resolve()
+                            : Promise.reject(new Error('IP 地址格式不正确，例：192.168.1.100')),
                       },
                     ]}
                   >
@@ -393,6 +438,85 @@ export default function Settings() {
                       size="large"
                       style={{ borderRadius: 6 }}
                     />
+                  </Form.Item>
+
+                  {/* ---- 测试连接 ---- */}
+                  <Form.Item label="连接测试">
+                    <Space wrap size={12}>
+                      <Button
+                        icon={<CheckCircleOutlined />}
+                        loading={testing}
+                        onClick={() => handleTestConnection(false)}
+                        style={{ borderRadius: 6, height: 34 }}
+                      >
+                        测试连接
+                      </Button>
+                      <Popconfirm
+                        title="将向打印机发送一张测试标签（消耗一张标签纸），确认继续？"
+                        onConfirm={() => handleTestConnection(true)}
+                        okText="发送"
+                        cancelText="取消"
+                      >
+                        <Button
+                          icon={<PrinterOutlined />}
+                          loading={testing}
+                          style={{ borderRadius: 6, height: 34 }}
+                        >
+                          打印测试标签
+                        </Button>
+                      </Popconfirm>
+                    </Space>
+                    {testResult && (
+                      <div style={{ marginTop: 12 }}>
+                        {testResult.success ? (
+                          <Alert
+                            type={testResult.confirmed === false ? 'warning' : 'success'}
+                            showIcon
+                            message={(
+                              <span>
+                                {testResult.confirmed === false ? '测试标签已发送，但未确认出纸' : '连接成功'}
+                                {testResult.latencyMs != null && (
+                                  <span style={{ fontWeight: 400, marginLeft: 6, color: '#605e5c', fontSize: 12 }}>
+                                    延迟 {testResult.latencyMs} ms
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            description={
+                              <div style={{ lineHeight: 1.6 }}>
+                                <div>{testResult.message || '打印机已就绪'}</div>
+                              </div>
+                            }
+                            closable
+                            onClose={() => setTestResult(null)}
+                            style={{ borderRadius: 8 }}
+                          />
+                        ) : (
+                          <Alert
+                            type="error"
+                            showIcon
+                            message={testResult.connected ? '已连接，但未检测到 ZPL 设备' : '连接失败'}
+                            description={
+                              <div style={{ lineHeight: 1.6 }}>
+                                <div>{testResult.error || '无法连接到打印机'}</div>
+                                {testResult.connected ? (
+                                  <div style={{ color: '#8a8886', marginTop: 4, fontSize: 12 }}>
+                                    当前设备不是 ZPL 兼容打印机（如斑马），发送 ZPL 标签会打印出乱码或被忽略，标签无法正常打印。请确认打印机型号；如需用普通打印机打印，请使用「打印预览 → 系统打印」。如确认为斑马打印机仍无法通过，请检查打印机设置或联系技术支持。
+                                  </div>
+                                ) : (
+                                  <div style={{ color: '#8a8886', marginTop: 4, fontSize: 12 }}>
+                                    请检查：① 打印机 IP 是否正确 ② 打印机是否已开机并联网 ③ 端口是否开放（默认 9100）④ 电脑与打印机是否在同一网段
+                                  </div>
+                                )}
+                              </div>
+                            }
+                            closable
+                            onClose={() => setTestResult(null)}
+                            style={{ borderRadius: 8 }}
+                          />
+                        )}
+                      </div>
+                    )}
                   </Form.Item>
                   <Space align="start" size={16}>
                     <Form.Item name="label_width" label="标签宽度 (mm)" rules={[{ required: true }]}>
